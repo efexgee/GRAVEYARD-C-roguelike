@@ -11,13 +11,14 @@ struct dood {
     char display;
     int x;
     int y;
+    bool active;
     enum Behavior behavior;
 };
 
 struct dood player;
 
 #define MAX_DOODS 1000
-struct dood goblins[MAX_DOODS];
+struct dood doods[MAX_DOODS];
 
 bool is_position_valid(int x, int y) {
     return level[y][x] != '#';
@@ -46,7 +47,9 @@ void draw() {
         }
     }
     for (int i=0; i < MAX_DOODS; i++) {
-        draw_dood(&goblins[i], dx, dy);
+        if (doods[i].active) {
+            draw_dood(&doods[i], dx, dy);
+        }
     }
     draw_dood(&player, dx, dy);
 }
@@ -64,10 +67,21 @@ void setup_level() {
     player.x = player.y = 1;
     player.display = '@';
     for (int i=0; i < MAX_DOODS; i++) {
-        goblins[i].x = rand()%(LEVEL_WIDTH-2) + 1;
-        goblins[i].y = rand()%(LEVEL_HEIGHT-2) + 1;
-        goblins[i].display = 'o';
-        goblins[i].behavior = RandomWalk;
+        doods[i].active = false;
+    }
+
+    for (int i=0; i < 100; i++) {
+        doods[i].x = rand()%(LEVEL_WIDTH-2) + 1;
+        doods[i].y = rand()%(LEVEL_HEIGHT-2) + 1;
+        doods[i].behavior = RandomWalk;
+        doods[i].active = true;
+
+        if (rand()%2 == 0) {
+            doods[i].display = 'o';
+        } else {
+            doods[i].display = 'O';
+        }
+
     }
 }
 
@@ -130,7 +144,9 @@ void main() {
         draw();
         while (move_player() == 0) {
             for (int i=0; i < MAX_DOODS; i++) {
-                move_dood(&goblins[i]);
+                if (doods[i].active) {
+                    move_dood(&doods[i]);
+                }
             }
             draw();
         }
