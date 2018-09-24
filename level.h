@@ -5,6 +5,7 @@ enum Behavior {RandomWalk, KeyboardInput};
 
 #define WALL '#'
 #define FLOOR '.'
+#define DOOR '-'
 
 #define ICON_HUMAN '@'
 #define ICON_GOBLIN 'o'
