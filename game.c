@@ -2,44 +2,16 @@
 #include <stdlib.h>
 #include <ncurses.h>
 
-#define WALL '#'
-#define FLOOR '.'
-
-#define ICON_HUMAN '@'
-#define ICON_GOBLIN 'o'
-#define ICON_ORC 'O'
-
-#define OUCH '!'
-
-#define LEVEL_WIDTH  200
-#define LEVEL_HEIGHT 100
-
-char level[LEVEL_HEIGHT][LEVEL_WIDTH];
-
-enum Behavior {RandomWalk, KeyboardInput};
-
-struct mobile {
-    char display;
-    int x;
-    int y;
-    bool active;
-    bool stacks;
-    enum Behavior behavior;
-    char emote;
-};
+#include "level.h"
 
 int keyboard_x, keyboard_y = 0;
 
-struct mobile *player;
 
-#define MAX_MOBS 1000
-struct mobile mobs[MAX_MOBS];
-
-bool is_position_valid(int x, int y) {
-    if (level[y][x] == WALL) return false;
+bool is_position_valid(level *lvl, int x, int y) {
+    if (lvl->tiles[y][x] == WALL) return false;
     else {
-        for (int i=0; i < MAX_MOBS; i++) {
-            if (!mobs[i].stacks && mobs[i].x == x && mobs[i].y == y) {
+        for (int i=0; i < lvl->mob_count; i++) {
+            if (!lvl->mobs[i].stacks && lvl->mobs[i].x == x && lvl->mobs[i].y == y) {
                 return false;
             }
         }
@@ -47,8 +19,8 @@ bool is_position_valid(int x, int y) {
     return true;
 }
 
-bool move_if_valid(struct mobile *mob, int x, int y) {
-    if (is_position_valid(x, y)) {
+bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
+    if (is_position_valid(lvl, x, y)) {
         mob->x = x;
         mob->y = y;
         return true;
@@ -57,7 +29,7 @@ bool move_if_valid(struct mobile *mob, int x, int y) {
     }
 }
 
-void draw_mobile(struct mobile *mob, int dx, int dy) {
+void draw_mobile(mobile *mob, int dx, int dy) {
     char display = mob->display;
 
     if (mob->emote) {
@@ -67,66 +39,30 @@ void draw_mobile(struct mobile *mob, int dx, int dy) {
 
     mvprintw(dy+mob->y, dx+mob->x, "%c", display);
 }
-void draw() {
+void draw(level *lvl) {
     int row,col;
     getmaxyx(stdscr,row,col);
 
-    int dx = col/2 - player->x;
-    int dy = row/2 - player->y;
+    int dx = col/2 - lvl->player->x;
+    int dy = row/2 - lvl->player->y;
 
     for (int x = 0; x < col; x++) {
         for (int y = 0; y < row; y++) {
             int xx = x - dx;
             int yy = y - dy;
-            if (xx >= 0 && xx < LEVEL_WIDTH && yy >= 0 && yy < LEVEL_HEIGHT) {
-                mvprintw(y, x, "%c", level[yy][xx]);
+            if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
+                mvprintw(y, x, "%c", lvl->tiles[yy][xx]);
             } else {
                 mvprintw(y, x, " ");
             }
         }
     }
-    for (int i=0; i < MAX_MOBS; i++) {
-        if (mobs[i].active) {
-            draw_mobile(&mobs[i], dx, dy);
+    for (int i=0; i < lvl->mob_count; i++) {
+        if (lvl->mobs[i].active) {
+            draw_mobile(&lvl->mobs[i], dx, dy);
         }
     }
-    draw_mobile(&player, dx, dy);
-}
-
-void setup_level() {
-    for (int x = 0; x < LEVEL_WIDTH; x++) {
-        for (int y = 0; y < LEVEL_HEIGHT; y++) {
-            if (x == 0 || y == 0 || y == LEVEL_HEIGHT-1 || x == LEVEL_WIDTH-1) {
-                level[y][x] = WALL;
-            } else {
-                level[y][x] = FLOOR;
-            }
-        }
-    }
-    for (int i=0; i < MAX_MOBS; i++) {
-        mobs[i].active = false;
-        mobs[i].stacks = false;
-    }
-
-    player = &mobs[MAX_MOBS-1];
-    player->x = player->y = 1;
-    player->behavior = KeyboardInput;
-    player->display = ICON_HUMAN;
-    player->active = true;
-
-    for (int i=0; i < 100; i++) {
-        mobs[i].x = rand()%(LEVEL_WIDTH-2) + 1;
-        mobs[i].y = rand()%(LEVEL_HEIGHT-2) + 1;
-        mobs[i].behavior = RandomWalk;
-        mobs[i].active = true;
-
-        if (rand()%2 == 0) {
-            mobs[i].display = ICON_GOBLIN;
-            mobs[i].stacks = true;
-        } else {
-            mobs[i].display = ICON_ORC;
-        }
-    }
+    draw_mobile(lvl->player, dx, dy);
 }
 
 int get_input() {
@@ -149,7 +85,7 @@ int get_input() {
     return 0;
 }
 
-void move_mobile(struct mobile *mob) {
+void move_mobile(level *lvl, mobile *mob) {
     int x = mob->x;
     int y = mob->y;
     switch (mob->behavior) {
@@ -168,7 +104,7 @@ void move_mobile(struct mobile *mob) {
             break;
     }
     if (x != mob->x || y != mob->y) {
-        if (!(move_if_valid(mob, x, y))) {
+        if (!(move_if_valid(lvl, mob, x, y))) {
             mob->emote = OUCH;
         }
     }
@@ -176,6 +112,8 @@ void move_mobile(struct mobile *mob) {
 
 void main() {
         int ch;
+        level *lvl;
+
         srand(time(NULL));
         initscr();
         raw();
@@ -185,16 +123,17 @@ void main() {
 
         curs_set(0);
 
-        setup_level();
-        draw();
+        lvl = make_level();
+        draw(lvl);
         while (get_input() == 0) {
-            for (int i=0; i < MAX_MOBS; i++) {
-                if (mobs[i].active) {
-                    move_mobile(&mobs[i]);
+            for (int i=0; i < lvl->mob_count; i++) {
+                if (lvl->mobs[i].active) {
+                    move_mobile(lvl, &lvl->mobs[i]);
                 }
             }
-            draw();
+            draw(lvl);
         }
 
+        destroy_level(lvl);
         endwin();
 }
