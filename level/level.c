@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "level.h"
+#include "../mob/mob.h"
 
 void partition(level *lvl);
 
@@ -13,36 +15,52 @@ level* make_level(void) {
     lvl->width = level_width;
     lvl->height = level_height;
     lvl->mob_count = 101;
-    lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile)));
+    lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile*)));
+    for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob();
     lvl->tiles = malloc(level_height * sizeof(unsigned char*));
     lvl->tiles[0] = malloc(level_height * level_width * sizeof(unsigned char));
     for(int i = 1; i < level_height; i++)
         lvl->tiles[i] = lvl->tiles[0] + i * level_width;
 
-    partition(lvl);
-
-    for (int i=0; i < lvl->mob_count; i++) {
-        lvl->mobs[i].active = false;
-        lvl->mobs[i].stacks = false;
+    lvl->items = malloc(level_height * sizeof(inventory_item**));
+    lvl->items[0] = malloc(level_height * level_width * sizeof(inventory_item*));
+    for(int i = 1; i < level_height; i++)
+        lvl->items[i] = lvl->items[0] + i * level_width;
+    for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        lvl->items[y][x] = NULL;
     }
 
-    lvl->player = &lvl->mobs[lvl->mob_count-1];
+    partition(lvl);
+
+    lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
     lvl->player->behavior = KeyboardInput;
     lvl->player->display = ICON_HUMAN;
     lvl->player->active = true;
+    item* stick = malloc(sizeof(item)); // FIXME leaks
+    stick->display = '|';
+    stick->name = "Stick";
+    push_inventory(lvl->player, stick);
+    item* lamp = malloc(sizeof(item)); // FIXME leaks
+    lamp->display = 'l';
+    lamp->name = "Lamp";
+    push_inventory(lvl->player, lamp);
 
     for (int i=0; i < lvl->mob_count-1; i++) {
-        lvl->mobs[i].x = rand()%(level_width-2) + 1;
-        lvl->mobs[i].y = rand()%(level_height-2) + 1;
-        lvl->mobs[i].behavior = RandomWalk;
-        lvl->mobs[i].active = true;
+        lvl->mobs[i]->x = rand()%(level_width-2) + 1;
+        lvl->mobs[i]->y = rand()%(level_height-2) + 1;
+        lvl->mobs[i]->behavior = RandomWalk;
+        lvl->mobs[i]->active = true;
 
         if (rand()%2 == 0) {
-            lvl->mobs[i].display = ICON_GOBLIN;
-            lvl->mobs[i].stacks = true;
+            lvl->mobs[i]->display = ICON_GOBLIN;
+            lvl->mobs[i]->stacks = true;
+            lvl->mobs[i]->name = malloc(sizeof(char)*7);
+            strcpy(lvl->mobs[i]->name, "goblin");
         } else {
-            lvl->mobs[i].display = ICON_ORC;
+            lvl->mobs[i]->display = ICON_ORC;
+            lvl->mobs[i]->name = malloc(sizeof(char)*4);
+            strcpy(lvl->mobs[i]->name, "orc");
         }
     }
 
@@ -52,6 +70,7 @@ level* make_level(void) {
 void destroy_level(level *lvl) {
     free((void *)lvl->tiles[0]);
     free((void *)lvl->tiles);
+    for (int i = 0; i < lvl->mob_count; i++) destroy_mob(lvl->mobs[i]);
     free((void *)lvl->mobs);
     free((void *)lvl);
 }
@@ -152,4 +171,29 @@ void partition(level *lvl) {
     free((void *)partitioning);
     free((void *)potential_doors[0]);
     free((void *)potential_doors);
+}
+
+void level_push_item(level *lvl, item *itm, int x, int y) {
+    inventory_item *new_inv = malloc(sizeof(inventory_item));
+    new_inv->next = NULL;
+    new_inv->item = itm;
+    if (lvl->items[y][x] == NULL) {
+        lvl->items[y][x] = new_inv;
+    } else {
+        inventory_item *inv = lvl->items[y][x];
+        while (inv->next != NULL) inv = inv->next;
+        inv->next = new_inv;
+    }
+}
+
+item* level_pop_item(level *lvl, int x, int y) {
+    if (lvl->items[y][x] == NULL) {
+        return NULL;
+    } else {
+        inventory_item *old = lvl->items[y][x];
+        lvl->items[y][x] = old->next;
+        item *itm = old-> item;
+        free(old);
+        return itm;
+    }
 }
