@@ -195,7 +195,7 @@ void move_mobile(level *lvl, mobile *mob) {
     }
 }
 
-void main() {
+int main() {
         int ch;
         level *lvl;
 
@@ -221,4 +221,5 @@ void main() {
 
         destroy_level(lvl);
         endwin();
+        return 0;
 }
