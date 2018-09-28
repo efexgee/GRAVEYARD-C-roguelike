@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <ncurses.h>
 
-#include "level.h"
+#include "level/level.h"
+#include "mob/mob.h"
 
 int keyboard_x, keyboard_y = 0;
 
