@@ -19,12 +19,12 @@ level* make_level(void) {
     for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob();
     lvl->tiles = malloc(level_height * sizeof(unsigned char*));
     lvl->tiles[0] = malloc(level_height * level_width * sizeof(unsigned char));
-    for(int i = 1; i < level_height; i++)
+    for (int i = 1; i < level_height; i++)
         lvl->tiles[i] = lvl->tiles[0] + i * level_width;
 
     lvl->items = malloc(level_height * sizeof(inventory_item**));
     lvl->items[0] = malloc(level_height * level_width * sizeof(inventory_item*));
-    for(int i = 1; i < level_height; i++)
+    for (int i = 1; i < level_height; i++)
         lvl->items[i] = lvl->items[0] + i * level_width;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
         lvl->items[y][x] = NULL;
