@@ -30,12 +30,27 @@ level* make_level(void) {
         lvl->items[y][x] = NULL;
     }
 
+    lvl->chemistry = malloc(level_height * sizeof(inventory_item**));
+    lvl->chemistry[0] = malloc(level_height * level_width * sizeof(inventory_item*));
+    for(int i = 1; i < level_height; i++)
+        lvl->chemistry[i] = lvl->chemistry[0] + i * level_width;
+    for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        lvl->chemistry[y][x] = make_constituents();
+    }
+
+    lvl->chemistry[1][1]->elements[fire] = 10;
+    lvl->chemistry[1][1]->stable = false;
+    lvl->chem_sys = make_default_chemical_system();
+
+
     partition(lvl);
 
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
     lvl->player->behavior = KeyboardInput;
     lvl->player->display = ICON_HUMAN;
+    lvl->player->name = malloc(sizeof(char)*9);
+    strcpy(lvl->player->name, "yourself");
     lvl->player->active = true;
     item* stick = malloc(sizeof(item)); // FIXME leaks
     stick->display = '|';
@@ -70,6 +85,14 @@ level* make_level(void) {
 void destroy_level(level *lvl) {
     free((void *)lvl->tiles[0]);
     free((void *)lvl->tiles);
+    free((void *)lvl->items[0]);
+    free((void *)lvl->items);
+    for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        destroy_constituents(lvl->chemistry[y][x]);
+    }
+    free((void *)lvl->chemistry[0]);
+    free((void *)lvl->chemistry);
+    destroy_chemical_system(lvl->chem_sys);
     for (int i = 0; i < lvl->mob_count; i++) destroy_mob(lvl->mobs[i]);
     free((void *)lvl->mobs);
     free((void *)lvl);

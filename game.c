@@ -56,7 +56,9 @@ void draw(level *lvl) {
             int yy = y - dy;
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
                 char display;
-                if (lvl->items[yy][xx] != NULL) {
+                if (lvl->chemistry[yy][xx]->elements[fire] > 0) {
+                    display = BURNING;
+                } else if (lvl->items[yy][xx] != NULL) {
                     display = lvl->items[yy][xx]->item->display;
                 } else {
                     display = lvl->tiles[yy][xx];
@@ -195,6 +197,16 @@ void move_mobile(level *lvl, mobile *mob) {
     }
 }
 
+void step_chemistry(level* lvl) {
+    for (int x = 0; x < lvl->width; x++) {
+        for (int y = 0; y < lvl->height; y++) {
+            if (!lvl->chemistry[y][x]->stable) {
+                react(lvl->chem_sys, lvl->chemistry[y][x]);
+            }
+        }
+    }
+}
+
 int main() {
         int ch;
         level *lvl;
@@ -216,6 +228,7 @@ int main() {
                     move_mobile(lvl, lvl->mobs[i]);
                 }
             }
+            step_chemistry(lvl);
             draw(lvl);
         } while (get_input(lvl) == 0);
 
