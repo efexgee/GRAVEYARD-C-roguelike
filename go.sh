@@ -36,12 +36,14 @@ if ! [[ -x $EXECUTABLE ]]; then
     exit 5
 fi
 
-# If the exectutable exits with an error run 'reset'
-# because usually the terminal is broken at that point
+echo "=== Launching $(basename $EXECUTABLE) ===" > "$ERRORS_FIFO"
+
 if ! "$EXECUTABLE" 2> "$ERRORS_FIFO"; then
+    # If the exectutable exits with an error, run 'reset'
+    # because usually the terminal is broken at that point
     # Redirect STDOUT to FIFO since our terminal will be broken
     exec > "$ERRORS_FIFO"
-    echo "$EXECUTABLE exited with error"
+    echo "$(basename $EXECUTABLE) exited with error"
     echo "Resetting terminal..."
     reset
     echo "Done."

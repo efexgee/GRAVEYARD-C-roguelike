@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-enum Behavior {RandomWalk, KeyboardInput};
+enum Behavior {RandomWalk, KeyboardInput, BeeLine};
 
 typedef struct Item {
     char display;
@@ -30,8 +30,10 @@ typedef struct Mobile {
 #define ICON_HUMAN '@'
 #define ICON_GOBLIN 'o'
 #define ICON_ORC 'O'
+#define ICON_MINOTAUR 'M'
 
-#define OUCH '!'
+#define EMOTE_OUCH '!'
+#define EMOTE_ANGRY '%'
 
 mobile* make_mob();
 void destroy_mob(mobile *mob);

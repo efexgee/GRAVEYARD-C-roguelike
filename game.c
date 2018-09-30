@@ -31,10 +31,23 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     }
 }
 
+float signed_slope(int a_x, int a_y, int b_x, int b_y) {
+    fprintf(stderr, "%s((%d, %d), (%d, %d))\n", "signed_slope", a_x, a_y, b_x, b_y);
+    int dx = b_x - a_x;
+    int dy = b_y - a_y;
+    // better way to coerce to float?
+    float slope = 1.0 * dy / dx;
+    fprintf(stderr, "%s(): slope is %.2f\n", "signed_slop", slope);
+
+    // better way to neg?
+    return dx >= 0 ? slope : slope * -1;
+}
+
 bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
     // Takes one step towards the target position if possible
+    fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
     int acc_err; // Doesn't actually get used
-    int dy = (target_y - actor->y) / (target_x - actor->x);
+    float dy = signed_slope(actor->x, actor->y, target_x, target_y);
 
     int new_x = actor->x;
     int new_y = actor->y;
@@ -52,8 +65,10 @@ bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
     // This is between two positions, theoretically non-directional
+    fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
     int acc_err = 0;
-    int dy = (b_y - a_y) / (b_x - a_x);
+    // Is this the best way to force floating point division?
+    float dy = signed_slope(a_x, a_y, b_x, b_y);
 
     while (!(a_x == b_x && a_y == b_y)) {
         next_square(&a_x, &a_y, dy, &acc_err);
@@ -70,6 +85,7 @@ bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
     // This is between a thing and a position
     // It just wraps line_of_sight for easier English reading
     // Making a thing-to-thing function seems too specific
+    fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "can_see", lvl, actor, target_x, target_y);
     return (line_of_sight(lvl, actor->x, actor->y, target_x, target_y));
 }
 
@@ -208,10 +224,29 @@ void move_mobile(level *lvl, mobile *mob) {
             keyboard_x = 0;
             keyboard_y = 0;
             break;
+        case BeeLine:
+            // approach() allows diagonal movement
+            if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
+                print_message("You are spotted by a minotaur!");
+                mob->display = '>';
+                if (!(approach(lvl, mob, lvl->player->x, lvl->player->y))) {
+                    mob->emote = EMOTE_ANGRY;
+                }
+            } else {
+                print_message("The minotaur can't find you.");
+                mob->display = ICON_MINOTAUR;
+                // same as RandomWalk - should be function?
+                if (rand()%2 == 0) {
+                    x += rand()%3 - 1;
+                } else {
+                    y += rand()%3 - 1;
+                }
+            }
+            break;
     }
     if (x != mob->x || y != mob->y) {
         if (!(move_if_valid(lvl, mob, x, y))) {
-            mob->emote = OUCH;
+            mob->emote = EMOTE_OUCH;
             if (rand()%100 > 95) {
                 char *msg;
                 switch (rand()%4) {
@@ -225,7 +260,7 @@ void move_mobile(level *lvl, mobile *mob) {
                         msg = "Jesus H. Christ!";
                         break;
                     case 3:
-                        msg = "Poop balls!";
+                        msg = "Poop weasels!";
                         break;
                 }
                 char *full_msg = malloc(sizeof(char)*200);
@@ -252,7 +287,10 @@ int main() {
 
         lvl = make_level();
         draw(lvl);
+
+        int turn = 0;
         do {
+            fprintf(stderr, "Turn %d\n", turn++);
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {
                     move_mobile(lvl, lvl->mobs[i]);

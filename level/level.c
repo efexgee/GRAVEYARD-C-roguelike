@@ -10,7 +10,7 @@ void partition(level *lvl);
 level* make_level(void) {
     level *lvl = malloc(sizeof *lvl);
     int level_width = 50;
-    int level_height = 50;
+    int level_height = 20;
 
     lvl->width = level_width;
     lvl->height = level_height;
@@ -52,6 +52,16 @@ level* make_level(void) {
         lvl->mobs[i]->behavior = RandomWalk;
         lvl->mobs[i]->active = true;
 
+        // hard-coded test mob
+        if (i == 0) {
+            lvl->mobs[i]->display = ICON_MINOTAUR;
+            lvl->mobs[i]->name = malloc(sizeof(char)*9);
+            lvl->mobs[i]->behavior = BeeLine;
+            strcpy(lvl->mobs[i]->name, "minotaur");
+            // only this mob
+            break;
+        }
+
         if (rand()%2 == 0) {
             lvl->mobs[i]->display = ICON_GOBLIN;
             lvl->mobs[i]->stacks = true;
@@ -76,7 +86,8 @@ void destroy_level(level *lvl) {
 }
 
 int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
-    if (w*h > 10*10 && rand()%100 < 50) {
+    // disabled walls
+    if (w*h > 10*10 && rand()%100 < 0) {
         int hw = w/2;
         int hh = h/2;
         int max_rm, new_rm;
@@ -165,7 +176,6 @@ void partition(level *lvl) {
             }
         }
     }
-
 
     free((void *)partitioning[0]);
     free((void *)partitioning);
