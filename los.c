@@ -4,42 +4,41 @@
 /*
 void draw_line(level *lvl, int cur_x, int cur_y, int target_x, int target_y) {
     slope = slope(cur_x, cur_y, target_x, target_y)
-    dy = slope / (target_x - cur_x)
+    y_step = slope / (target_x - cur_x)
     // one step?
     acc_error = 0
     until next_square = end
-        next_square(&cur_x, &cur_y, dy, &acc_error)
+        next_square(&cur_x, &cur_y, y_step, &acc_error)
         draw(lvl, cur_x, cur_y)
 */
 
-void next_square(int *x, int *y, float dy, int *acc_err) {
+void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
     // Change a position to the next position along an angle (sort of)
-    // This requires dy and acc_err to be passed in so this really can't
+    // This requires y_step and acc_err to be passed in so this really can't
     // exist on its own. That feels weird.
 
     // sanity check
-    fprintf(stderr, "%s(%d, %d, %.2f, %d)\n", "next_square", *x, *y, dy, *acc_err);
+    fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
 
-    if (dy < 0) {
-        fprintf(stderr, "%s: dy is negative\n", "next_square");
+    if (y_step < 0) {
+        fprintf(stderr, "%s: y_step is negative\n", "next_square");
         return;
-    } else if (dy == 0) {
-        fprintf(stderr, "%s: dy is zero\n", "next_square");
+    } else if (y_step == 0) {
+        fprintf(stderr, "%s: y_step is zero\n", "next_square");
         return;
-    } else if (dy == INFINITY) {
-        fprintf(stderr, "%s: dy is infinity\n", "next_square");
+    } else if (y_step == INFINITY) {
+        fprintf(stderr, "%s: y_step is infinity\n", "next_square");
         return;
     }
 
     int ideal_y, adjust;
 
-    // Can't go plus 1 everywhere! Might need to go backwards!!!
     // *x++ <-- Nooooooooooooooo!
-    (*x)++;
-    ideal_y = *y + dy;
+    *x += x_step;
+    ideal_y = *y + y_step;
 
     *y = round(ideal_y);
-    // y = round(ideal_y = *y + dy);  :.(
+    // y = round(ideal_y = *y + y_step);  :.(
     
     *acc_err += *y - ideal_y;
 
@@ -49,6 +48,4 @@ void next_square(int *x, int *y, float dy, int *acc_err) {
         *y += adjust;
         *acc_err += adjust;
     }
-
-    //assert(abs(*acc_err <= 0.5));
 }

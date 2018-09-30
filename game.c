@@ -31,28 +31,27 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     }
 }
 
-float signed_slope(int a_x, int a_y, int b_x, int b_y) {
-    fprintf(stderr, "%s((%d, %d), (%d, %d))\n", "signed_slope", a_x, a_y, b_x, b_y);
+void set_steps(int *x_step, float *y_step, int a_x, int a_y, int b_x, int b_y) {
     int dx = b_x - a_x;
     int dy = b_y - a_y;
-    // better way to coerce to float?
-    float slope = 1.0 * dy / dx;
-    fprintf(stderr, "%s(): slope is %.2f\n", "signed_slop", slope);
 
-    // better way to neg?
-    return dx >= 0 ? slope : slope * -1;
+    *y_step = (float) dy / dx;
+    *x_step = dx < 0 ? -1 : 1;
 }
 
 bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
     // Takes one step towards the target position if possible
     fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
-    int acc_err; // Doesn't actually get used
-    float dy = signed_slope(actor->x, actor->y, target_x, target_y);
+    int acc_err; // Doesn't actually get used :(
+    int x_step;
+    float y_step;
+
+    set_steps(&x_step, &y_step, actor->x, actor->y, target_x, target_y);
 
     int new_x = actor->x;
     int new_y = actor->y;
 
-    next_square(&new_x, &new_y, dy, &acc_err);
+    next_square(&new_x, &new_y, x_step, y_step, &acc_err);
 
     if (is_position_valid(lvl, new_x, new_y)) {
         actor->x = new_x;
@@ -67,11 +66,13 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
     // This is between two positions, theoretically non-directional
     fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
     int acc_err = 0;
-    // Is this the best way to force floating point division?
-    float dy = signed_slope(a_x, a_y, b_x, b_y);
+    int x_step;
+    float y_step;
+
+    set_steps(&x_step, &y_step, a_x, a_y, b_x, b_y);
 
     while (!(a_x == b_x && a_y == b_y)) {
-        next_square(&a_x, &a_y, dy, &acc_err);
+        next_square(&a_x, &a_y, x_step, y_step, &acc_err);
 
         if (!(is_position_valid(lvl, a_x, a_y))) {
             return false;
