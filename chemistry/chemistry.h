@@ -3,16 +3,17 @@
 #include <stdbool.h>
 
 enum element_names {
-    fire = 0,
-    earth = 1,
-    water = 2,
-    air = 3,
-    wood = 4,
-    foogle = 5,
-    banz = 5,
-    life = 6,
-    venom = 7,
-    ash = 8
+    fire,
+    earth,
+    water,
+    air,
+    wood,
+    phosphorus,
+    foogle,
+    banz,
+    life,
+    venom,
+    ash
 };
 #define ELEMENT_COUNT ash+1
 

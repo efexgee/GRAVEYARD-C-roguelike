@@ -10,7 +10,7 @@ char message_banner[200];
 
 
 bool is_position_valid(level *lvl, int x, int y) {
-    if (lvl->tiles[y][x] == WALL || lvl->tiles[y][x] == CLOSED_DOOR) return false;
+    if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) return false;
     else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
@@ -56,12 +56,12 @@ void draw(level *lvl) {
             int yy = y - dy;
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
                 char display;
-                if (lvl->chemistry[yy][xx]->elements[fire] > 0) {
+                if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
                     display = BURNING;
-                } else if (lvl->items[yy][xx] != NULL) {
-                    display = lvl->items[yy][xx]->item->display;
+                } else if (lvl->items[xx][yy] != NULL) {
+                    display = lvl->items[xx][yy]->item->display;
                 } else {
-                    display = lvl->tiles[yy][xx];
+                    display = lvl->tiles[xx][yy];
                 }
                 mvprintw(y, x, "%c", display);
             } else {
@@ -113,7 +113,7 @@ void pickup_item(level *lvl, mobile *mob) {
 
 void smash(level *lvl, mobile *mob) {
     item *potion = ((item*)mob)->contents->item;
-    add_constituents(lvl->chemistry[mob->y][mob->x], potion->chemistry);
+    add_constituents(lvl->chemistry[mob->x][mob->y], potion->chemistry);
     inventory_item *inv = ((item*)mob)->contents;
     ((item*)mob)->contents = inv->next;
     free((void*)inv);
@@ -122,7 +122,7 @@ void smash(level *lvl, mobile *mob) {
 
 void print_location_elements(level *lvl, mobile *mob) {
     char *message = malloc(sizeof(char)*200);
-    constituents *chem = lvl->chemistry[mob->y][mob->x];
+    constituents *chem = lvl->chemistry[mob->x][mob->y];
     snprintf(message, 200, "wood: %d air: %d fire: %d", chem->elements[wood], chem->elements[air], chem->elements[fire]);
     print_message(message);
     free((void*)message);
@@ -147,10 +147,10 @@ void toggle_door(level *lvl, mobile *mob) {
         default:
             return;
     }
-    if (lvl->tiles[y][x] == OPEN_DOOR) {
-        lvl->tiles[y][x] = CLOSED_DOOR;
-    } else if (lvl->tiles[y][x] == CLOSED_DOOR) {
-        lvl->tiles[y][x] = OPEN_DOOR;
+    if (lvl->tiles[x][y] == OPEN_DOOR) {
+        lvl->tiles[x][y] = CLOSED_DOOR;
+    } else if (lvl->tiles[x][y] == CLOSED_DOOR) {
+        lvl->tiles[x][y] = OPEN_DOOR;
     }
 }
 
@@ -307,8 +307,8 @@ void step_item(level *lvl, item *itm, constituents *chem_ctx) {
 void step_mobile(level *lvl, mobile *mob) {
     constituents *chemistry = ((item*)mob)->chemistry;
     move_mobile(lvl, mob);
-    if (lvl->chemistry[mob->y][mob->x]->elements[air] > 5) {
-        lvl->chemistry[mob->y][mob->x]->elements[air] -= 5;
+    if (lvl->chemistry[mob->x][mob->y]->elements[air] > 5) {
+        lvl->chemistry[mob->x][mob->y]->elements[air] -= 5;
     } else {
         ((item*)mob)->health -= 1;
     }
@@ -320,7 +320,7 @@ void step_mobile(level *lvl, mobile *mob) {
         chemistry->elements[venom] -= 10;
         ((item*)mob)->health -= 1;
     }
-    step_item(lvl, (item*)mob, lvl->chemistry[mob->y][mob->x]);
+    step_item(lvl, (item*)mob, lvl->chemistry[mob->x][mob->y]);
     if (((item*)mob)->health <= 0) {
         mob->active = false;
     }
@@ -329,17 +329,17 @@ void step_mobile(level *lvl, mobile *mob) {
 void level_step_chemistry(level* lvl) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            step_chemistry(lvl->chem_sys, lvl->chemistry[y][x], NULL);
-            inventory_item *inv = lvl->items[y][x];
+            step_chemistry(lvl->chem_sys, lvl->chemistry[x][y], NULL);
+            inventory_item *inv = lvl->items[x][y];
             while (inv != NULL) {
-                step_item(lvl, inv->item, lvl->chemistry[y][x]);
+                step_item(lvl, inv->item, lvl->chemistry[x][y]);
                 if (inv->item->health <= 0) {
                     inv->item->name = "Ashy Remnants";
-                    inv->item->display = '&';
+                    inv->item->display = '~';
                 }
                 inv = inv->next;
             }
-            if (lvl->tiles[y][x] != WALL && lvl->tiles[y][x] != CLOSED_DOOR && lvl->chemistry[y][x]->elements[air] < 20) lvl->chemistry[y][x]->elements[air] += 3;
+            if (lvl->tiles[x][y] != WALL && lvl->tiles[x][y] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[air] < 20) lvl->chemistry[x][y]->elements[air] += 3;
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
@@ -354,8 +354,8 @@ void level_step_chemistry(level* lvl) {
             }
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
-                    added_element[y][x] = 0;
-                    removed_element[y][x] = 0;
+                    added_element[x][y] = 0;
+                    removed_element[x][y] = 0;
                 }
             }
 
@@ -368,9 +368,9 @@ void level_step_chemistry(level* lvl) {
                         for (int dy = 0; dy < 2; dy++) {
                             int yy = y + (((dy+ry)%3)-1);
                             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
-                                if (lvl->tiles[yy][xx] != WALL && lvl->tiles[yy][xx] != CLOSED_DOOR && lvl->chemistry[y][x]->elements[element] - removed_element[y][x] > lvl->chemistry[yy][xx]->elements[element] + added_element[yy][xx]) {
-                                    removed_element[y][x] += 1;
-                                    added_element[yy][xx] += 1;
+                                if (lvl->tiles[xx][yy] != WALL && lvl->tiles[xx][yy] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[element] - removed_element[x][y] > lvl->chemistry[xx][yy]->elements[element] + added_element[xx][yy]) {
+                                    removed_element[x][y] += 1;
+                                    added_element[xx][yy] += 1;
                                 }
                             }
                         }
@@ -379,9 +379,9 @@ void level_step_chemistry(level* lvl) {
             }
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
-                    if (added_element[y][x] > 0 || removed_element[y][x] > 0) {
-                        lvl->chemistry[y][x]->elements[element] += added_element[y][x] - removed_element[y][x];
-                        lvl->chemistry[y][x]->stable = false;
+                    if (added_element[x][y] > 0 || removed_element[x][y] > 0) {
+                        lvl->chemistry[x][y]->elements[element] += added_element[x][y] - removed_element[x][y];
+                        lvl->chemistry[x][y]->stable = false;
                     }
                 }
             }

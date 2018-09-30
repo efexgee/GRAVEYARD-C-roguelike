@@ -44,6 +44,13 @@ chemical_system* make_default_chemical_system() {
     sys->reactions[2].input.elements[fire] = 1;
     sys->reactions[2].output.elements[fire] = 0;
 
+    //Phosphorous combustion
+    sys->reactions[3].input.elements[phosphorus] = 1;
+    sys->reactions[3].input.elements[air] = 1;
+    sys->reactions[3].output.elements[phosphorus] = 0;
+    sys->reactions[3].output.elements[air] = 0;
+    sys->reactions[3].output.elements[fire] = 1;
+
     // Anti-venom
     sys->reactions[0].input.elements[venom] = 10;
     sys->reactions[0].input.elements[banz] = 10;
