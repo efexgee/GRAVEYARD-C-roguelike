@@ -29,6 +29,7 @@ typedef struct reaction {
 
 typedef struct chemical_system {
     reaction* reactions;
+    bool volitile[ELEMENT_COUNT];
     int num_reactions;
 } chemical_system;
 

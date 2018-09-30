@@ -36,10 +36,12 @@ level* make_level(void) {
         lvl->chemistry[i] = lvl->chemistry[0] + i * level_width;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
         lvl->chemistry[y][x] = make_constituents();
+        lvl->chemistry[y][x]->elements[wood] = 100;
     }
 
     lvl->chemistry[1][1]->elements[fire] = 10;
     lvl->chemistry[1][1]->stable = false;
+
     lvl->chem_sys = make_default_chemical_system();
 
 

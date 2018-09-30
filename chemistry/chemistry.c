@@ -26,16 +26,20 @@ chemical_system* make_default_chemical_system() {
         }
     }
 
+    for (int i = 0; i < ELEMENT_COUNT; i++) sys->volitile[i] = false;
+    sys->volitile[fire] = true;
+    sys->volitile[air] = true;
+
     // Burning
-    sys->reactions[2].input.elements[wood] = 1;
-    sys->reactions[2].input.elements[fire] = 1;
-    sys->reactions[2].output.elements[wood] = 0;
-    sys->reactions[2].output.elements[fire] = 2;
-    sys->reactions[2].output.elements[ash] = 1;
+    sys->reactions[1].input.elements[wood] = 1;
+    sys->reactions[1].input.elements[fire] = 1;
+    sys->reactions[1].output.elements[wood] = 0;
+    sys->reactions[1].output.elements[fire] = 2;
+    sys->reactions[1].output.elements[ash] = 1;
 
     //Fire dying
-    sys->reactions[1].input.elements[fire] = 1;
-    sys->reactions[1].output.elements[fire] = 0;
+    sys->reactions[2].input.elements[fire] = 1;
+    sys->reactions[2].output.elements[fire] = 0;
 
     // Anti-venom
     sys->reactions[0].input.elements[venom] = 1;

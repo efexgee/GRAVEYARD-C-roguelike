@@ -252,6 +252,46 @@ void level_step_chemistry(level* lvl) {
             step_chemistry(lvl->chem_sys, lvl->chemistry[y][x]);
         }
     }
+    for (int element = 0; element < ELEMENT_COUNT; element++) {
+        if (lvl->chem_sys->volitile[element]) {
+            int **new_element = malloc(lvl->height * sizeof(int*));
+            new_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
+            for(int i = 1; i < lvl->height; i++)
+                new_element[i] = new_element[0] + i * lvl->width;
+            for (int x = 0; x < lvl->width; x++) {
+                for (int y = 0; y < lvl->height; y++) {
+                    new_element[y][x] = 0;
+                }
+            }
+
+            for (int x = 0; x < lvl->width; x++) {
+                for (int y = 0; y < lvl->height; y++) {
+                    for (int xx = x-1; xx < x+2; xx++) {
+                        for (int yy = y-1; yy < y+2; yy++) {
+                            if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
+                                if (lvl->tiles[yy][xx] != WALL && lvl->chemistry[y][x]->elements[element] > 1) {
+                                    lvl->chemistry[y][x]->elements[element] -= 1;
+                                    new_element[yy][xx] += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for (int x = 0; x < lvl->width; x++) {
+                for (int y = 0; y < lvl->height; y++) {
+                    if (new_element[y][x] > 0) {
+                        lvl->chemistry[y][x]->elements[element] += new_element[y][x];
+                        lvl->chemistry[y][x]->stable = false;
+                    }
+                }
+            }
+            free((void*)new_element[0]);
+            free((void*)new_element);
+        }
+    }
+
+
 }
 
 int main() {
