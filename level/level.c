@@ -49,7 +49,7 @@ level* make_level(void) {
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
     lvl->player->behavior = KeyboardInput;
-    lvl->player->health = 10;
+    ((item*)lvl->player)->health = 10;
     ((item*)lvl->player)->display = ICON_HUMAN;
     ((item*)lvl->player)->name = malloc(sizeof(char)*9);
     strcpy(((item*)lvl->player)->name, "yourself");
@@ -80,13 +80,14 @@ level* make_level(void) {
     antidote->type = Potion;
     push_inventory(lvl->player, antidote);
 
-    item* lamp = malloc(sizeof(item)); // FIXME leaks
-    lamp->display = 'l';
-    lamp->chemistry = make_constituents();
-    lamp->chemistry->elements[earth] = 30;
-    lamp->name = "Lamp";
-    lamp->type = Weapon;
-    push_inventory(lvl->player, lamp);
+    item* stick = malloc(sizeof(item)); // FIXME leaks
+    stick->display = 'l';
+    stick->health = 5;
+    stick->chemistry = make_constituents();
+    stick->chemistry->elements[wood] = 30;
+    stick->name = "Stick";
+    stick->type = Weapon;
+    push_inventory(lvl->player, stick);
 
     for (int i=0; i < lvl->mob_count-1; i++) {
         lvl->mobs[i]->x = rand()%(level_width-2) + 1;

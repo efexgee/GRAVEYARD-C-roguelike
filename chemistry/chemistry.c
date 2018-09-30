@@ -1,3 +1,4 @@
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -65,22 +66,24 @@ void destroy_chemical_system(chemical_system* sys) {
     free((void*)sys);
 }
 
-bool reaction_possible(reaction *re, constituents *input) {
+bool reaction_possible(reaction *re, constituents *input, constituents *ctx) {
     for (int i=0; i < ELEMENT_COUNT; i++) {
-        if (re->input.elements[i] > 0 && re->input.elements[i] > input->elements[i]) {
+        int avaliable = input->elements[i];
+        if (ctx != NULL) avaliable += ctx->elements[i];
+        if (re->input.elements[i] > avaliable) {
             return false;
         }
     }
     return true;
 }
 
-void react(chemical_system *sys, constituents *input) {
+void react(chemical_system *sys, constituents *input, constituents *context) {
     bool did_react = false;
     int r = rand();
     for (int i = 0; i < sys->num_reactions; i++) {
         int j = (i+r)%sys->num_reactions;
         reaction *re = &sys->reactions[j];
-        if (apply_reaction(re, input)) {
+        if (apply_reaction(re, input, context)) {
             did_react = true;
             break;
         }
@@ -88,15 +91,31 @@ void react(chemical_system *sys, constituents *input) {
     input->stable = !did_react;
 }
 
-bool apply_reaction(reaction *re, constituents *input) {
-    if (reaction_possible(re, input)) {
+bool apply_reaction(reaction *re, constituents *input, constituents *ctx) {
+    if (reaction_possible(re, input, ctx)) {
         constituents result;
         for (int i=0; i < ELEMENT_COUNT; i++) {
-            if (re->input.elements[i] > 0) {
-                input->elements[i] -= re->input.elements[i];
+            int needed = re->input.elements[i];
+            float proportion_from_input = 1.0;
+            if (needed > 0) {
+                if (needed > input->elements[i]) {
+                    proportion_from_input = input->elements[i]/(float)needed;
+                    needed -= input->elements[i];
+                    input->elements[i] = 0;
+                    ctx->elements[i] -= needed;
+                } else {
+                    input->elements[i] -= needed;
+                }
             }
             if (re->output.elements[i] > 0) {
-                input->elements[i] +=re->output.elements[i];
+                if (proportion_from_input != 1.0) {
+                    int to_input = round(proportion_from_input*re->output.elements[i]);
+                    int to_output = re->output.elements[i] - to_input;
+                    input->elements[i] += to_input;
+                    ctx->elements[i] += to_output;
+                } else {
+                    input->elements[i] += re->output.elements[i];
+                }
             }
         }
         return true;

@@ -50,7 +50,7 @@ START_TEST(test_apply_reaction) {
     input->elements[air] = 5;
     input->elements[wood] = 6;
 
-    ck_assert(apply_reaction(&rec, input));
+    ck_assert(apply_reaction(&rec, input, NULL));
 
     ck_assert_int_eq(input->elements[fire], 1);
     ck_assert_int_eq(input->elements[earth], 4);
@@ -58,11 +58,11 @@ START_TEST(test_apply_reaction) {
     ck_assert_int_eq(input->elements[air], 5);
     ck_assert_int_eq(input->elements[wood], 6);
 
-    ck_assert(apply_reaction(&rec, input));
+    ck_assert(apply_reaction(&rec, input, NULL));
     ck_assert_int_eq(input->elements[fire], 0);
     ck_assert_int_eq(input->elements[earth], 5);
 
-    ck_assert(!apply_reaction(&rec, input));
+    ck_assert(!apply_reaction(&rec, input, NULL));
 
     destroy_constituents(input);
 } END_TEST
@@ -71,7 +71,7 @@ START_TEST(test_react) {
     constituents *thing = make_constituents();
     thing->elements[fire] = 1;
 
-    react(sys, thing);
+    react(sys, thing, NULL);
     ck_assert(!thing->stable);
     ck_assert_int_eq(thing->elements[fire], 0);
     ck_assert_int_eq(thing->elements[earth], 1);
@@ -79,7 +79,7 @@ START_TEST(test_react) {
     ck_assert_int_eq(thing->elements[air], 0);
     ck_assert_int_eq(thing->elements[wood], 0);
 
-    react(sys, thing);
+    react(sys, thing, NULL);
     ck_assert(!thing->stable);
     ck_assert_int_eq(thing->elements[fire], 0);
     ck_assert_int_eq(thing->elements[earth], 0);
@@ -87,7 +87,7 @@ START_TEST(test_react) {
     ck_assert_int_eq(thing->elements[air], 0);
     ck_assert_int_eq(thing->elements[wood], 0);
 
-    react(sys, thing);
+    react(sys, thing, NULL);
     ck_assert(thing->stable);
 
     destroy_constituents(thing);

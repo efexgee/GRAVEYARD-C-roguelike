@@ -206,8 +206,18 @@ int get_input(level *lvl) {
                 print_message("You smash the potion on the floor.");
             } else print_message("That isn't a potion.");
             break;
+        case 'e':
+            if (((item*)lvl->player)->contents != NULL) {
+                snprintf(message, 200, "wood: %d fire: %d ash: %d",
+                        ((item*)lvl->player)->contents->item->chemistry->elements[wood],
+                        ((item*)lvl->player)->contents->item->chemistry->elements[fire],
+                        ((item*)lvl->player)->contents->item->chemistry->elements[ash]
+                        );
+                print_message(message);
+            }
+            break;
         case 's':
-            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", lvl->player->health, ((item*)lvl->player)->chemistry->elements[venom], ((item*)lvl->player)->chemistry->elements[banz], ((item*)lvl->player)->chemistry->elements[life]);
+            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", ((item*)lvl->player)->health, ((item*)lvl->player)->chemistry->elements[venom], ((item*)lvl->player)->chemistry->elements[banz], ((item*)lvl->player)->chemistry->elements[life]);
             print_message(message);
             break;
         case 't':
@@ -269,19 +279,29 @@ void move_mobile(level *lvl, mobile *mob) {
     }
 }
 
-void step_chemistry(chemical_system *sys, constituents *chem) {
+void step_chemistry(chemical_system *sys, constituents *chem, constituents *context) {
     for (int i = 0; i < 3; i++) {
-        if (!chem->stable) {
-            react(sys, chem);
+        bool is_stable = chem->stable;
+        if (context != NULL) is_stable = is_stable && context->stable;
+        if (!is_stable) {
+            react(sys, chem, context);
         }
     }
 }
 
-void step_inventory_chemistry(chemical_system *sys, inventory_item *inv) {
+void step_inventory_chemistry(chemical_system *sys, inventory_item *inv, constituents *context) {
     while (inv != NULL) {
-        step_chemistry(sys, inv->item->chemistry);
+        step_chemistry(sys, inv->item->chemistry, context);
         inv = inv->next;
     }
+}
+
+void step_item(level *lvl, item *itm, constituents *chem_ctx) {
+    step_chemistry(lvl->chem_sys, itm->chemistry, chem_ctx);
+    step_inventory_chemistry(lvl->chem_sys, itm->contents, itm->chemistry);
+    bool burning = itm->chemistry->elements[fire] > 0;
+    if (chem_ctx != NULL) burning = burning || chem_ctx->elements[fire] > 0;
+    if (burning && itm->health > 0) itm->health -= 1;
 }
 
 void step_mobile(level *lvl, mobile *mob) {
@@ -290,19 +310,18 @@ void step_mobile(level *lvl, mobile *mob) {
     if (lvl->chemistry[mob->y][mob->x]->elements[air] > 5) {
         lvl->chemistry[mob->y][mob->x]->elements[air] -= 5;
     } else {
-        mob->health -= 1;
+        ((item*)mob)->health -= 1;
     }
     if (chemistry->elements[life] > 0) {
         chemistry->elements[life] -= 10;
-        mob->health += 1;
+        ((item*)mob)->health += 1;
     }
     if (chemistry->elements[venom] > 0) {
         chemistry->elements[venom] -= 10;
-        mob->health -= 1;
+        ((item*)mob)->health -= 1;
     }
-    step_chemistry(lvl->chem_sys, chemistry);
-    step_inventory_chemistry(lvl->chem_sys, ((item*)mob)->contents);
-    if (mob->health <= 0) {
+    step_item(lvl, (item*)mob, lvl->chemistry[mob->y][mob->x]);
+    if (((item*)mob)->health <= 0) {
         mob->active = false;
     }
 }
@@ -310,8 +329,17 @@ void step_mobile(level *lvl, mobile *mob) {
 void level_step_chemistry(level* lvl) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            step_chemistry(lvl->chem_sys, lvl->chemistry[y][x]);
-            if (lvl->tiles[y][x] == FLOOR && lvl->chemistry[y][x]->elements[air] < 20) lvl->chemistry[y][x]->elements[air] += 3;
+            step_chemistry(lvl->chem_sys, lvl->chemistry[y][x], NULL);
+            inventory_item *inv = lvl->items[y][x];
+            while (inv != NULL) {
+                step_item(lvl, inv->item, lvl->chemistry[y][x]);
+                if (inv->item->health <= 0) {
+                    inv->item->name = "Ashy Remnants";
+                    inv->item->display = '&';
+                }
+                inv = inv->next;
+            }
+            if (lvl->tiles[y][x] != WALL && lvl->tiles[y][x] != CLOSED_DOOR && lvl->chemistry[y][x]->elements[air] < 20) lvl->chemistry[y][x]->elements[air] += 3;
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {

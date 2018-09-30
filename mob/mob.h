@@ -15,6 +15,7 @@ typedef struct {
     char *name;
     constituents *chemistry;
     struct InventoryItem *contents;
+    int health;
     enum item_type type;
 } item;
 
@@ -25,7 +26,6 @@ typedef struct InventoryItem {
 
 typedef struct Mobile {
     item base;
-    int health;
     int x;
     int y;
     bool active;

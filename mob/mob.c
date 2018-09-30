@@ -6,9 +6,10 @@ mobile* make_mob() {
     mobile *mob = malloc(sizeof(mobile));
     ((item*)mob)->display = ' ';
     ((item*)mob)->chemistry = make_constituents();
+    ((item*)mob)->type = Creature;
     mob->x = 0;
     mob->y = 0;
-    mob->health = 1;
+    ((item*)mob)->health = 1;
     mob->active = false;
     mob->stacks = false;
     mob->behavior = RandomWalk;

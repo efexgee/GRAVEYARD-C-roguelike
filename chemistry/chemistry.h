@@ -14,7 +14,7 @@ enum element_names {
     venom = 7,
     ash = 8
 };
-#define ELEMENT_COUNT ash
+#define ELEMENT_COUNT ash+1
 
 typedef struct constituents {
     int elements[ELEMENT_COUNT];
@@ -29,8 +29,8 @@ typedef struct reaction {
 
 typedef struct chemical_system {
     reaction* reactions;
-    bool volitile[ELEMENT_COUNT];
     int num_reactions;
+    bool volitile[ELEMENT_COUNT];
 } chemical_system;
 
 constituents* make_constituents();
@@ -41,7 +41,7 @@ chemical_system* make_default_chemical_system();
 chemical_system* make_chemical_system(int num_reactions);
 void destroy_chemical_system(chemical_system* sys);
 
-void react(chemical_system *system, constituents *input);
-bool apply_reaction(reaction *re, constituents *input);
+void react(chemical_system *system, constituents *input, constituents *context);
+bool apply_reaction(reaction *re, constituents *input, constituents *context);
 
 #endif

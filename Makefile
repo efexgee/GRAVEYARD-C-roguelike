@@ -33,8 +33,8 @@ c18:
 	$(MAKE) CFLAGS="-std=c18" all
 
 
-test_suite: chemestry/chemestry.c tests/chemestry/check_chemestry.c
-	$(CC) $^ -lcheck -o $@
+test_suite: chemistry/chemistry.c tests/chemistry/check_chemistry.c
+	$(CC) $^ -lcheck -lm -o $@
 
 # print out some implicit rules used in this file so you can see how variables are used by implicit rules
 wtf:
