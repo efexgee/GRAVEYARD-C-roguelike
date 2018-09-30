@@ -9,8 +9,8 @@ void partition(level *lvl);
 
 level* make_level(void) {
     level *lvl = malloc(sizeof *lvl);
-    int level_width = 50;
-    int level_height = 20;
+    int level_width = LVL_WIDTH;
+    int level_height = LVL_HEIGHT;
 
     lvl->width = level_width;
     lvl->height = level_height;

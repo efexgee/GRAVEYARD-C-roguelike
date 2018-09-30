@@ -6,6 +6,9 @@
 
 #include "../mob/mob.h"
 
+#define LVL_WIDTH 20;
+#define LVL_HEIGHT 20;
+
 #define WALL '#'
 #define FLOOR '.'
 #define OPEN_DOOR '-'
