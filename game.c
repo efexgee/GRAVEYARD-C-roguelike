@@ -289,15 +289,18 @@ int main() {
         lvl = make_level();
         draw(lvl);
 
-        for (int m=0; m < 20; m++) {
-            for (int n=0; n < 20; n++) {
-                is_position_valid(lvl, m, n);
-            }
-        }
-
         int turn = 0;
         do {
             fprintf(stderr, "Turn %d\n", turn++);
+
+            fprintf(stderr, "Start level valid check.\n");
+            for (int m=0; m < lvl->width; m++) {
+                for (int n=0; n < lvl->height; n++) {
+                    is_position_valid(lvl, m, n);
+                }
+            }
+            fprintf(stderr, "End level valid check.\n");
+
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {
                     move_mobile(lvl, lvl->mobs[i]);

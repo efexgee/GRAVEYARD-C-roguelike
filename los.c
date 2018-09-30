@@ -39,7 +39,7 @@ void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
 
     *y = round(ideal_y);
     // y = round(ideal_y = *y + y_step);  :.(
-    
+
     *acc_err += *y - ideal_y;
 
     if (abs(*acc_err > 0.5)) {

@@ -44,7 +44,7 @@ if ! "$EXECUTABLE" 2> "$ERRORS_FIFO"; then
     # Redirect STDOUT to FIFO since our terminal will be broken
     exec > "$ERRORS_FIFO"
     echo "$(basename $EXECUTABLE) exited with error"
-    echo "Resetting terminal..."
+    echo -n "Resetting terminal..."
     reset
     echo "Done."
 fi
