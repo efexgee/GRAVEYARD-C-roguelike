@@ -50,9 +50,9 @@ level* make_level(void) {
     lvl->player->x = lvl->player->y = 1;
     lvl->player->behavior = KeyboardInput;
     lvl->player->health = 10;
-    lvl->player->display = ICON_HUMAN;
-    lvl->player->name = malloc(sizeof(char)*9);
-    strcpy(lvl->player->name, "yourself");
+    ((item*)lvl->player)->display = ICON_HUMAN;
+    ((item*)lvl->player)->name = malloc(sizeof(char)*9);
+    strcpy(((item*)lvl->player)->name, "yourself");
     lvl->player->active = true;
 
     item* potion = malloc(sizeof(item)); // FIXME leaks
@@ -95,14 +95,14 @@ level* make_level(void) {
         lvl->mobs[i]->active = true;
 
         if (rand()%2 == 0) {
-            lvl->mobs[i]->display = ICON_GOBLIN;
+            ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
             lvl->mobs[i]->stacks = true;
-            lvl->mobs[i]->name = malloc(sizeof(char)*7);
-            strcpy(lvl->mobs[i]->name, "goblin");
+            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
+            strcpy(((item*)lvl->mobs[i])->name, "goblin");
         } else {
-            lvl->mobs[i]->display = ICON_ORC;
-            lvl->mobs[i]->name = malloc(sizeof(char)*4);
-            strcpy(lvl->mobs[i]->name, "orc");
+            ((item*)lvl->mobs[i])->display = ICON_ORC;
+            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+            strcpy(((item*)lvl->mobs[i])->name, "orc");
         }
     }
 

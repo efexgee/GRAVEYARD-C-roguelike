@@ -32,7 +32,7 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
 }
 
 void draw_mobile(mobile *mob, int dx, int dy) {
-    char display = mob->display;
+    char display = ((item*)mob)->display;
 
     if (mob->emote) {
         display = mob->emote;
@@ -112,10 +112,10 @@ void pickup_item(level *lvl, mobile *mob) {
 }
 
 void smash(level *lvl, mobile *mob) {
-    item *potion = mob->inventory->item;
+    item *potion = ((item*)mob)->contents->item;
     add_constituents(lvl->chemistry[mob->y][mob->x], potion->chemistry);
-    inventory_item *inv = mob->inventory;
-    mob->inventory = inv->next;
+    inventory_item *inv = ((item*)mob)->contents;
+    ((item*)mob)->contents = inv->next;
     free((void*)inv);
     destroy_item(potion);
 }
@@ -201,13 +201,13 @@ int get_input(level *lvl) {
             }
             break;
         case 'v':
-            if (lvl->player->inventory != NULL && lvl->player->inventory->item->type == Potion) {
+            if (((item*)lvl->player)->contents != NULL && ((item*)lvl->player)->contents->item->type == Potion) {
                 smash(lvl, lvl->player);
                 print_message("You smash the potion on the floor.");
             } else print_message("That isn't a potion.");
             break;
         case 's':
-            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", lvl->player->health, lvl->player->chemistry->elements[venom], lvl->player->chemistry->elements[banz], lvl->player->chemistry->elements[life]);
+            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", lvl->player->health, ((item*)lvl->player)->chemistry->elements[venom], ((item*)lvl->player)->chemistry->elements[banz], ((item*)lvl->player)->chemistry->elements[life]);
             print_message(message);
             break;
         case 't':
@@ -261,7 +261,7 @@ void move_mobile(level *lvl, mobile *mob) {
                         break;
                 }
                 char *full_msg = malloc(sizeof(char)*200);
-                snprintf(full_msg, 200, "You hear the %s say \"%s\"", mob->name, msg);
+                snprintf(full_msg, 200, "You hear the %s say \"%s\"", ((item*)mob)->name, msg);
                 print_message(full_msg);
                 free(full_msg);
             }
@@ -285,22 +285,23 @@ void step_inventory_chemistry(chemical_system *sys, inventory_item *inv) {
 }
 
 void step_mobile(level *lvl, mobile *mob) {
+    constituents *chemistry = ((item*)mob)->chemistry;
     move_mobile(lvl, mob);
     if (lvl->chemistry[mob->y][mob->x]->elements[air] > 5) {
         lvl->chemistry[mob->y][mob->x]->elements[air] -= 5;
     } else {
         mob->health -= 1;
     }
-    if (mob->chemistry->elements[life] > 0) {
-        mob->chemistry->elements[life] -= 10;
+    if (chemistry->elements[life] > 0) {
+        chemistry->elements[life] -= 10;
         mob->health += 1;
     }
-    if (mob->chemistry->elements[venom] > 0) {
-        mob->chemistry->elements[venom] -= 10;
+    if (chemistry->elements[venom] > 0) {
+        chemistry->elements[venom] -= 10;
         mob->health -= 1;
     }
-    step_chemistry(lvl->chem_sys, mob->chemistry);
-    step_inventory_chemistry(lvl->chem_sys, mob->inventory);
+    step_chemistry(lvl->chem_sys, chemistry);
+    step_inventory_chemistry(lvl->chem_sys, ((item*)mob)->contents);
     if (mob->health <= 0) {
         mob->active = false;
     }

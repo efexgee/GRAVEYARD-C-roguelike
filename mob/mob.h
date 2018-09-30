@@ -6,13 +6,16 @@
 #include "../chemistry/chemistry.h"
 
 enum Behavior {RandomWalk, KeyboardInput};
-enum item_type {Weapon, Potion};
+enum item_type {Weapon, Potion, Creature};
 
-typedef struct Item {
+struct InventoryItem;
+
+typedef struct {
     char display;
-    constituents *chemistry;
-    enum item_type type;
     char *name;
+    constituents *chemistry;
+    struct InventoryItem *contents;
+    enum item_type type;
 } item;
 
 typedef struct InventoryItem {
@@ -21,9 +24,7 @@ typedef struct InventoryItem {
 } inventory_item;
 
 typedef struct Mobile {
-    char display;
-    constituents *chemistry;
-    char *name;
+    item base;
     int health;
     int x;
     int y;
@@ -31,7 +32,6 @@ typedef struct Mobile {
     bool stacks;
     enum Behavior behavior;
     char emote;
-    inventory_item *inventory;
 } mobile;
 
 #define ICON_HUMAN '@'

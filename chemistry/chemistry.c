@@ -35,15 +35,13 @@ chemical_system* make_default_chemical_system() {
     sys->reactions[1].input.elements[fire] = 1;
     sys->reactions[1].input.elements[air] = 10;
     sys->reactions[1].output.elements[wood] = 0;
-    sys->reactions[1].output.elements[fire] = 10;
+    sys->reactions[1].output.elements[fire] = 4;
     sys->reactions[1].output.elements[air] = 0;
     sys->reactions[1].output.elements[ash] = 5;
 
     //Fire dying
     sys->reactions[2].input.elements[fire] = 1;
     sys->reactions[2].output.elements[fire] = 0;
-    sys->reactions[3].input.elements[fire] = 5;
-    sys->reactions[3].output.elements[fire] = 0;
 
     // Anti-venom
     sys->reactions[0].input.elements[venom] = 10;
