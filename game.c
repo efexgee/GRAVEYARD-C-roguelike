@@ -4,10 +4,10 @@
 
 #include "level/level.h"
 #include "mob/mob.h"
+#include "los.h"
 
 int keyboard_x, keyboard_y = 0;
 char message_banner[200];
-
 
 bool is_position_valid(level *lvl, int x, int y) {
     if (lvl->tiles[y][x] == WALL) return false;
@@ -29,6 +29,47 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     } else {
         return false;
     }
+}
+
+bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
+    // Takes one step towards the target position if possible
+    int acc_err; // Doesn't actually get used
+    int dy = (b_y - actor->y) / (b_x - actor->x);
+
+    int new_x = actor->x;
+    int new_y = actor->y;
+
+    next_square(&new_x, &new_y, dy, &acc_err);
+
+    if (is_position_valid(lvl, new_x, new_y)) {
+        actor->x = new_x;
+        actor->y = new_y;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
+    // This is between two positions, theoretically non-directional
+    int acc_err = 0;
+    int dy = (b_y - a_y) / (b_x - a_x);
+
+    while (!(a_x == b_x && a_y == b_y)) {
+        next_square(&a_x, &a_y, dy, &acc_err);
+
+        if (!(is_position_valid(lvl, a_x, a_y))) {
+            return false;
+        }
+
+    return true;
+}
+
+bool can_see(mobile *actor, target_x, target_y) {
+    // This is between a thing and a position
+    // It just wraps line_of_sight for easier English reading
+    // Making a thing-to-thing function seems too specific
+    return (line_of_sight(actor->x, actor->y, target_x, target_y));
 }
 
 void draw_mobile(mobile *mob, int dx, int dy) {

@@ -1,5 +1,5 @@
-#include <math.h>
-#include <assert.h>
+// #include <math.h>
+// #include <assert.h>
 
 /*
 void draw_line(level *lvl, int cur_x, int cur_y, int target_x, int target_y) {
@@ -39,6 +39,7 @@ void next_square(int *x, int *y, dy, int *acc_err) {
 // below here needs to be in game.c because checking validity
 // of a square requires information outside of this lib
 
+/*
 bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
     // This would be a function that "takes one step" and
     // only exists to provide the dy/acc_err wrapper around
@@ -90,3 +91,4 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
 
     return true;
 }
+*/
