@@ -10,7 +10,7 @@ char message_banner[200];
 
 
 bool is_position_valid(level *lvl, int x, int y) {
-    if (lvl->tiles[y][x] == WALL) return false;
+    if (lvl->tiles[y][x] == WALL || lvl->tiles[y][x] == CLOSED_DOOR) return false;
     else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
@@ -120,6 +120,40 @@ void smash(level *lvl, mobile *mob) {
     destroy_item(potion);
 }
 
+void print_location_elements(level *lvl, mobile *mob) {
+    char *message = malloc(sizeof(char)*200);
+    constituents *chem = lvl->chemistry[mob->y][mob->x];
+    snprintf(message, 200, "wood: %d air: %d fire: %d", chem->elements[wood], chem->elements[air], chem->elements[fire]);
+    print_message(message);
+    free((void*)message);
+}
+
+void toggle_door(level *lvl, mobile *mob) {
+    int x = mob->x;
+    int y = mob->y;
+    switch (getch()) {
+        case KEY_UP:
+            y -= 1;
+            break;
+        case KEY_DOWN:
+            y += 1;
+            break;
+        case KEY_RIGHT:
+            x += 1;
+            break;
+        case KEY_LEFT:
+            x -= 1;
+            break;
+        default:
+            return;
+    }
+    if (lvl->tiles[y][x] == OPEN_DOOR) {
+        lvl->tiles[y][x] = CLOSED_DOOR;
+    } else if (lvl->tiles[y][x] == CLOSED_DOOR) {
+        lvl->tiles[y][x] = OPEN_DOOR;
+    }
+}
+
 int get_input(level *lvl) {
     char *inventory;
     char *message = malloc(sizeof(char)*200);
@@ -175,6 +209,12 @@ int get_input(level *lvl) {
         case 's':
             snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", lvl->player->health, lvl->player->chemistry->elements[venom], lvl->player->chemistry->elements[banz], lvl->player->chemistry->elements[life]);
             print_message(message);
+            break;
+        case 't':
+            print_location_elements(lvl, lvl->player);
+            break;
+        case 'o':
+            toggle_door(lvl, lvl->player);
             break;
         case 'Q':
             return_code = -1;
@@ -246,8 +286,8 @@ void step_inventory_chemistry(chemical_system *sys, inventory_item *inv) {
 
 void step_mobile(level *lvl, mobile *mob) {
     move_mobile(lvl, mob);
-    if (lvl->chemistry[mob->y][mob->x]->elements[air] > 10) {
-        lvl->chemistry[mob->y][mob->x]->elements[air] -= 10;
+    if (lvl->chemistry[mob->y][mob->x]->elements[air] > 5) {
+        lvl->chemistry[mob->y][mob->x]->elements[air] -= 5;
     } else {
         mob->health -= 1;
     }
@@ -270,7 +310,7 @@ void level_step_chemistry(level* lvl) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             step_chemistry(lvl->chem_sys, lvl->chemistry[y][x]);
-            if (lvl->chemistry[y][x]->elements[air] < 20) lvl->chemistry[y][x]->elements[air] += 10;
+            if (lvl->tiles[y][x] == FLOOR && lvl->chemistry[y][x]->elements[air] < 20) lvl->chemistry[y][x]->elements[air] += 3;
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
@@ -299,7 +339,7 @@ void level_step_chemistry(level* lvl) {
                         for (int dy = 0; dy < 2; dy++) {
                             int yy = y + (((dy+ry)%3)-1);
                             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
-                                if (lvl->tiles[yy][xx] != WALL && lvl->chemistry[y][x]->elements[element] - removed_element[y][x] > 1) {
+                                if (lvl->tiles[yy][xx] != WALL && lvl->tiles[yy][xx] != CLOSED_DOOR && lvl->chemistry[y][x]->elements[element] - removed_element[y][x] > lvl->chemistry[yy][xx]->elements[element] + added_element[yy][xx]) {
                                     removed_element[y][x] += 1;
                                     added_element[yy][xx] += 1;
                                 }
@@ -340,12 +380,8 @@ int main() {
         curs_set(0);
 
         lvl = make_level();
+        draw(lvl);
         do {
-            if (!lvl->player->active) {
-                print_message("You die");
-            }
-            draw(lvl);
-            print_message("");
 
             if (!lvl->player->active) {
                 getch();
@@ -358,6 +394,11 @@ int main() {
                 }
             }
             level_step_chemistry(lvl);
+            if (!lvl->player->active) {
+                print_message("You die");
+            }
+            draw(lvl);
+            print_message("");
         } while (get_input(lvl) == 0);
 
         destroy_level(lvl);
