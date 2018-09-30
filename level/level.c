@@ -39,8 +39,6 @@ level* make_level(void) {
         lvl->chemistry[y][x]->elements[wood] = 100;
     }
 
-    lvl->chemistry[1][1]->elements[fire] = 10;
-    lvl->chemistry[1][1]->stable = false;
 
     lvl->chem_sys = make_default_chemical_system();
 
@@ -60,6 +58,7 @@ level* make_level(void) {
     potion->display = 'p';
     potion->chemistry = make_constituents();
     potion->chemistry->elements[life] = 3;
+    potion->chemistry->elements[fire] = 3;
     potion->name = "Healing Potion";
     potion->type = Potion;
     push_inventory(lvl->player, potion);

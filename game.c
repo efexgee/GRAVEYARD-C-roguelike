@@ -111,6 +111,15 @@ void pickup_item(level *lvl, mobile *mob) {
     }
 }
 
+void smash(level *lvl, mobile *mob) {
+    item *potion = mob->inventory->item;
+    add_constituents(lvl->chemistry[mob->y][mob->x], potion->chemistry);
+    inventory_item *inv = mob->inventory;
+    mob->inventory = inv->next;
+    free((void*)inv);
+    destroy_item(potion);
+}
+
 int get_input(level *lvl) {
     char *inventory;
     char *message = malloc(sizeof(char)*200);
@@ -152,12 +161,16 @@ int get_input(level *lvl) {
             break;
         case 'q':
             if(quaff(lvl->player)) {
-                snprintf(message, 200, "You drink a potion.");
-                print_message(message);
+                print_message("You drink a potion.");
             } else {
-                snprintf(message, 200, "That isn't a potion.");
-                print_message(message);
+                print_message("That isn't a potion.");
             }
+            break;
+        case 'v':
+            if (lvl->player->inventory != NULL && lvl->player->inventory->item->type == Potion) {
+                smash(lvl, lvl->player);
+                print_message("You smash the potion on the floor.");
+            } else print_message("That isn't a potion.");
             break;
         case 's':
             snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", lvl->player->health, lvl->player->chemistry->elements[venom], lvl->player->chemistry->elements[banz], lvl->player->chemistry->elements[life]);
