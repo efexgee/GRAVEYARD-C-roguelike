@@ -48,17 +48,42 @@ level* make_level(void) {
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
     lvl->player->behavior = KeyboardInput;
+    lvl->player->health = 10;
     lvl->player->display = ICON_HUMAN;
     lvl->player->name = malloc(sizeof(char)*9);
     strcpy(lvl->player->name, "yourself");
     lvl->player->active = true;
-    item* stick = malloc(sizeof(item)); // FIXME leaks
-    stick->display = '|';
-    stick->name = "Stick";
-    push_inventory(lvl->player, stick);
+
+    item* potion = malloc(sizeof(item)); // FIXME leaks
+    potion->display = 'p';
+    potion->chemistry = make_constituents();
+    potion->chemistry->elements[life] = 3;
+    potion->name = "Healing Potion";
+    potion->type = Potion;
+    push_inventory(lvl->player, potion);
+
+    item* poison = malloc(sizeof(item)); // FIXME leaks
+    poison->display = 'p';
+    poison->chemistry = make_constituents();
+    poison->chemistry->elements[venom] = 3;
+    poison->name = "Poison";
+    poison->type = Potion;
+    push_inventory(lvl->player, poison);
+
+    item* antidote = malloc(sizeof(item)); // FIXME leaks
+    antidote->display = 'p';
+    antidote->chemistry = make_constituents();
+    antidote->chemistry->elements[banz] = 3;
+    antidote->name = "Antidote";
+    antidote->type = Potion;
+    push_inventory(lvl->player, antidote);
+
     item* lamp = malloc(sizeof(item)); // FIXME leaks
     lamp->display = 'l';
+    lamp->chemistry = make_constituents();
+    lamp->chemistry->elements[earth] = 3;
     lamp->name = "Lamp";
+    lamp->type = Weapon;
     push_inventory(lvl->player, lamp);
 
     for (int i=0; i < lvl->mob_count-1; i++) {

@@ -5,8 +5,10 @@
 mobile* make_mob() {
     mobile *mob = malloc(sizeof(mobile));
     mob->display = ' ';
+    mob->chemistry = make_constituents();
     mob->x = 0;
     mob->y = 0;
+    mob->health = 1;
     mob->active = false;
     mob->stacks = false;
     mob->behavior = RandomWalk;
@@ -15,6 +17,7 @@ mobile* make_mob() {
     return mob;
 }
 void destroy_mob(mobile *mob) {
+    destroy_constituents(mob->chemistry);
     inventory_item *inv = mob->inventory;
     while (inv != NULL) {
         inventory_item *next = inv->next;
@@ -66,4 +69,33 @@ char* inventory_string(mobile* mob, int len) {
         inv = next;
     }
     return str;
+}
+
+void rotate_inventory(mobile* mob) {
+    if (mob->inventory != NULL && mob->inventory->next != NULL) {
+        inventory_item *itm = mob->inventory;
+        while (itm->next->next != NULL) itm = itm->next;
+        inventory_item *last = itm->next;
+        itm->next = NULL;
+        last->next = mob->inventory;
+        mob->inventory = last;
+    }
+}
+
+void destroy_item(item *itm) {
+    destroy_constituents(itm->chemistry);
+    free((void*)itm);
+}
+
+bool quaff(mobile* mob) {
+    if (mob->inventory != NULL && mob->inventory->item->type == Potion) {
+        inventory_item* inv = mob->inventory;
+        add_constituents(mob->chemistry, inv->item->chemistry);
+        destroy_item(inv->item);
+        mob->inventory = inv->next;
+        mob->chemistry->stable = false;
+        free((void*)inv);
+        return true;
+    }
+    return false;
 }

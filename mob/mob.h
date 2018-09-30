@@ -3,10 +3,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "../chemistry/chemistry.h"
+
 enum Behavior {RandomWalk, KeyboardInput};
+enum item_type {Weapon, Potion};
 
 typedef struct Item {
     char display;
+    constituents *chemistry;
+    enum item_type type;
     char *name;
 } item;
 
@@ -17,7 +22,9 @@ typedef struct InventoryItem {
 
 typedef struct Mobile {
     char display;
+    constituents *chemistry;
     char *name;
+    int health;
     int x;
     int y;
     bool active;
@@ -38,4 +45,8 @@ void destroy_mob(mobile *mob);
 void push_inventory(mobile* mob, item* itm);
 item* pop_inventory(mobile* mob);
 char* inventory_string(mobile* mob, int len);
+void destroy_item(item *itm);
+
+void rotate_inventory(mobile* mob);
+bool quaff(mobile* mob);
 #endif

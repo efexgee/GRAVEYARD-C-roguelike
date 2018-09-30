@@ -27,15 +27,22 @@ chemical_system* make_default_chemical_system() {
     }
 
     // Burning
-    sys->reactions[0].input.elements[wood] = 1;
-    sys->reactions[0].input.elements[fire] = 1;
-    sys->reactions[0].output.elements[wood] = 0;
-    sys->reactions[0].output.elements[fire] = 2;
-    sys->reactions[0].output.elements[ash] = 1;
+    sys->reactions[2].input.elements[wood] = 1;
+    sys->reactions[2].input.elements[fire] = 1;
+    sys->reactions[2].output.elements[wood] = 0;
+    sys->reactions[2].output.elements[fire] = 2;
+    sys->reactions[2].output.elements[ash] = 1;
 
     //Fire dying
     sys->reactions[1].input.elements[fire] = 1;
     sys->reactions[1].output.elements[fire] = 0;
+
+    // Anti-venom
+    sys->reactions[0].input.elements[venom] = 1;
+    sys->reactions[0].input.elements[banz] = 1;
+    sys->reactions[0].output.elements[venom] = 0;
+    sys->reactions[0].output.elements[banz] = 0;
+    sys->reactions[0].output.elements[ash] = 1;
 
     return sys;
 }
@@ -87,4 +94,10 @@ bool apply_reaction(reaction *re, constituents *input) {
         return true;
     }
     return false;
+}
+
+void add_constituents(constituents *dest, constituents *src) {
+        for (int i=0; i < ELEMENT_COUNT; i++) {
+            dest->elements[i] += src->elements[i];
+        }
 }

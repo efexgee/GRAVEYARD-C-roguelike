@@ -117,7 +117,6 @@ int get_input(level *lvl) {
     int input = getch();
     int return_code = 0;
 
-    print_message("");
 
     switch (input) {
         case KEY_UP:
@@ -144,7 +143,27 @@ int get_input(level *lvl) {
         case '.':
             pickup_item(lvl, lvl->player);
             break;
+        case 'r':
+            rotate_inventory(lvl->player);
+            inventory = inventory_string(lvl->player, 200);
+            snprintf(message, 200, "Your inventory contains: %s", inventory);
+            print_message(message);
+            free((void*)inventory);
+            break;
         case 'q':
+            if(quaff(lvl->player)) {
+                snprintf(message, 200, "You drink a potion.");
+                print_message(message);
+            } else {
+                snprintf(message, 200, "That isn't a potion.");
+                print_message(message);
+            }
+            break;
+        case 's':
+            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", lvl->player->health, lvl->player->chemistry->elements[venom], lvl->player->chemistry->elements[banz], lvl->player->chemistry->elements[life]);
+            print_message(message);
+            break;
+        case 'Q':
             return_code = -1;
     }
     free((void*)message);
@@ -197,12 +216,40 @@ void move_mobile(level *lvl, mobile *mob) {
     }
 }
 
-void step_chemistry(level* lvl) {
+void step_chemistry(chemical_system *sys, constituents *chem) {
+    if (!chem->stable) {
+        react(sys, chem);
+    }
+}
+
+void step_inventory_chemistry(chemical_system *sys, inventory_item *inv) {
+    while (inv != NULL) {
+        step_chemistry(sys, inv->item->chemistry);
+        inv = inv->next;
+    }
+}
+
+void step_mobile(level *lvl, mobile *mob) {
+    move_mobile(lvl, mob);
+    if (mob->chemistry->elements[life] > 0) {
+        mob->chemistry->elements[life] -= 1;
+        mob->health += 1;
+    }
+    if (mob->chemistry->elements[venom] > 0) {
+        mob->chemistry->elements[venom] -= 1;
+        mob->health -= 1;
+    }
+    step_chemistry(lvl->chem_sys, mob->chemistry);
+    step_inventory_chemistry(lvl->chem_sys, mob->inventory);
+    if (mob->health <= 0) {
+        mob->active = false;
+    }
+}
+
+void level_step_chemistry(level* lvl) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            if (!lvl->chemistry[y][x]->stable) {
-                react(lvl->chem_sys, lvl->chemistry[y][x]);
-            }
+            step_chemistry(lvl->chem_sys, lvl->chemistry[y][x]);
         }
     }
 }
@@ -221,15 +268,24 @@ int main() {
         curs_set(0);
 
         lvl = make_level();
-        draw(lvl);
         do {
+            if (!lvl->player->active) {
+                print_message("You die");
+            }
+            draw(lvl);
+            print_message("");
+
+            if (!lvl->player->active) {
+                getch();
+                break;
+            }
+
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {
-                    move_mobile(lvl, lvl->mobs[i]);
+                    step_mobile(lvl, lvl->mobs[i]);
                 }
             }
-            step_chemistry(lvl);
-            draw(lvl);
+            level_step_chemistry(lvl);
         } while (get_input(lvl) == 0);
 
         destroy_level(lvl);

@@ -10,7 +10,9 @@ enum element_names {
     wood = 4,
     foogle = 5,
     banz = 5,
-    ash = 6
+    life = 6,
+    venom = 7,
+    ash = 8
 };
 #define ELEMENT_COUNT ash
 
@@ -32,6 +34,7 @@ typedef struct chemical_system {
 
 constituents* make_constituents();
 void destroy_constituents(constituents *con);
+void add_constituents(constituents *dest, constituents *src);
 
 chemical_system* make_default_chemical_system();
 chemical_system* make_chemical_system(int num_reactions);
