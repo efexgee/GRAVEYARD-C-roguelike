@@ -19,6 +19,9 @@ all: game
 # target file is not there
 game: game.c level/level.c mob/mob.c level/level.h mob/mob.h los.c los.h
 
+strict:
+	$(MAKE) CFLAGS="-Werror" all
+
 # clean up stuff, one step (note steps are tab-indented lines, each of which is executed as shell command in a subprocess using $(SHELL)
 # as the executable)
 clean:
