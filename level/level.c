@@ -30,21 +30,64 @@ level* make_level(void) {
         lvl->items[y][x] = NULL;
     }
 
+    lvl->chemistry = malloc(level_height * sizeof(inventory_item**));
+    lvl->chemistry[0] = malloc(level_height * level_width * sizeof(inventory_item*));
+    for(int i = 1; i < level_height; i++)
+        lvl->chemistry[i] = lvl->chemistry[0] + i * level_width;
+    for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        lvl->chemistry[y][x] = make_constituents();
+        lvl->chemistry[y][x]->elements[wood] = 300;
+        lvl->chemistry[y][x]->elements[air] = 20;
+    }
+
+
+    lvl->chem_sys = make_default_chemical_system();
+
+
     partition(lvl);
 
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
     lvl->player->behavior = KeyboardInput;
-    lvl->player->display = ICON_HUMAN;
+    ((item*)lvl->player)->health = 10;
+    ((item*)lvl->player)->display = ICON_HUMAN;
+    ((item*)lvl->player)->name = malloc(sizeof(char)*9);
+    strcpy(((item*)lvl->player)->name, "yourself");
     lvl->player->active = true;
+
+    item* potion = malloc(sizeof(item)); // FIXME leaks
+    potion->display = 'p';
+    potion->chemistry = make_constituents();
+    potion->chemistry->elements[life] = 30;
+    potion->chemistry->elements[fire] = 30;
+    potion->name = "Healing Potion";
+    potion->type = Potion;
+    push_inventory(lvl->player, potion);
+
+    item* poison = malloc(sizeof(item)); // FIXME leaks
+    poison->display = 'p';
+    poison->chemistry = make_constituents();
+    poison->chemistry->elements[venom] = 30;
+    poison->name = "Poison";
+    poison->type = Potion;
+    push_inventory(lvl->player, poison);
+
+    item* antidote = malloc(sizeof(item)); // FIXME leaks
+    antidote->display = 'p';
+    antidote->chemistry = make_constituents();
+    antidote->chemistry->elements[banz] = 30;
+    antidote->name = "Antidote";
+    antidote->type = Potion;
+    push_inventory(lvl->player, antidote);
+
     item* stick = malloc(sizeof(item)); // FIXME leaks
-    stick->display = '|';
+    stick->display = 'l';
+    stick->health = 5;
+    stick->chemistry = make_constituents();
+    stick->chemistry->elements[wood] = 30;
     stick->name = "Stick";
+    stick->type = Weapon;
     push_inventory(lvl->player, stick);
-    item* lamp = malloc(sizeof(item)); // FIXME leaks
-    lamp->display = 'l';
-    lamp->name = "Lamp";
-    push_inventory(lvl->player, lamp);
 
     for (int i=0; i < lvl->mob_count-1; i++) {
         lvl->mobs[i]->x = rand()%(level_width-2) + 1;
@@ -53,14 +96,14 @@ level* make_level(void) {
         lvl->mobs[i]->active = true;
 
         if (rand()%2 == 0) {
-            lvl->mobs[i]->display = ICON_GOBLIN;
+            ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
             lvl->mobs[i]->stacks = true;
-            lvl->mobs[i]->name = malloc(sizeof(char)*7);
-            strcpy(lvl->mobs[i]->name, "goblin");
+            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
+            strcpy(((item*)lvl->mobs[i])->name, "goblin");
         } else {
-            lvl->mobs[i]->display = ICON_ORC;
-            lvl->mobs[i]->name = malloc(sizeof(char)*4);
-            strcpy(lvl->mobs[i]->name, "orc");
+            ((item*)lvl->mobs[i])->display = ICON_ORC;
+            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+            strcpy(((item*)lvl->mobs[i])->name, "orc");
         }
     }
 
@@ -70,6 +113,14 @@ level* make_level(void) {
 void destroy_level(level *lvl) {
     free((void *)lvl->tiles[0]);
     free((void *)lvl->tiles);
+    free((void *)lvl->items[0]);
+    free((void *)lvl->items);
+    for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        destroy_constituents(lvl->chemistry[y][x]);
+    }
+    free((void *)lvl->chemistry[0]);
+    free((void *)lvl->chemistry);
+    destroy_chemical_system(lvl->chem_sys);
     for (int i = 0; i < lvl->mob_count; i++) destroy_mob(lvl->mobs[i]);
     free((void *)lvl->mobs);
     free((void *)lvl);
