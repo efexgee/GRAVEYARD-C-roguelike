@@ -31,22 +31,24 @@ chemical_system* make_default_chemical_system() {
     sys->volitile[air] = true;
 
     // Burning
-    sys->reactions[1].input.elements[wood] = 1;
+    sys->reactions[1].input.elements[wood] = 10;
     sys->reactions[1].input.elements[fire] = 1;
+    sys->reactions[1].input.elements[air] = 25;
     sys->reactions[1].output.elements[wood] = 0;
-    sys->reactions[1].output.elements[fire] = 2;
-    sys->reactions[1].output.elements[ash] = 1;
+    sys->reactions[1].output.elements[fire] = 20;
+    sys->reactions[1].output.elements[air] = 0;
+    sys->reactions[1].output.elements[ash] = 10;
 
     //Fire dying
     sys->reactions[2].input.elements[fire] = 1;
     sys->reactions[2].output.elements[fire] = 0;
 
     // Anti-venom
-    sys->reactions[0].input.elements[venom] = 1;
-    sys->reactions[0].input.elements[banz] = 1;
+    sys->reactions[0].input.elements[venom] = 10;
+    sys->reactions[0].input.elements[banz] = 10;
     sys->reactions[0].output.elements[venom] = 0;
     sys->reactions[0].output.elements[banz] = 0;
-    sys->reactions[0].output.elements[ash] = 1;
+    sys->reactions[0].output.elements[ash] = 10;
 
     return sys;
 }
@@ -74,8 +76,10 @@ bool reaction_possible(reaction *re, constituents *input) {
 
 void react(chemical_system *sys, constituents *input) {
     bool did_react = false;
+    int r = rand();
     for (int i = 0; i < sys->num_reactions; i++) {
-        reaction *re = &sys->reactions[i];
+        int j = (i+r)%sys->num_reactions;
+        reaction *re = &sys->reactions[j];
         if (apply_reaction(re, input)) {
             did_react = true;
             break;

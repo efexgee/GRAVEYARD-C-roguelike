@@ -13,7 +13,7 @@ bool is_position_valid(level *lvl, int x, int y) {
     if (lvl->tiles[y][x] == WALL) return false;
     else {
         for (int i=0; i < lvl->mob_count; i++) {
-            if (!lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
+            if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
                 return false;
             }
         }
@@ -230,8 +230,10 @@ void move_mobile(level *lvl, mobile *mob) {
 }
 
 void step_chemistry(chemical_system *sys, constituents *chem) {
-    if (!chem->stable) {
-        react(sys, chem);
+    for (int i = 0; i < 3; i++) {
+        if (!chem->stable) {
+            react(sys, chem);
+        }
     }
 }
 
@@ -244,12 +246,17 @@ void step_inventory_chemistry(chemical_system *sys, inventory_item *inv) {
 
 void step_mobile(level *lvl, mobile *mob) {
     move_mobile(lvl, mob);
+    if (lvl->chemistry[mob->y][mob->x]->elements[air] > 10) {
+        lvl->chemistry[mob->y][mob->x]->elements[air] -= 10;
+    } else {
+        mob->health -= 1;
+    }
     if (mob->chemistry->elements[life] > 0) {
-        mob->chemistry->elements[life] -= 1;
+        mob->chemistry->elements[life] -= 10;
         mob->health += 1;
     }
     if (mob->chemistry->elements[venom] > 0) {
-        mob->chemistry->elements[venom] -= 1;
+        mob->chemistry->elements[venom] -= 10;
         mob->health -= 1;
     }
     step_chemistry(lvl->chem_sys, mob->chemistry);
@@ -263,28 +270,38 @@ void level_step_chemistry(level* lvl) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             step_chemistry(lvl->chem_sys, lvl->chemistry[y][x]);
+            if (lvl->chemistry[y][x]->elements[air] < 20) lvl->chemistry[y][x]->elements[air] += 10;
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
         if (lvl->chem_sys->volitile[element]) {
-            int **new_element = malloc(lvl->height * sizeof(int*));
-            new_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
-            for(int i = 1; i < lvl->height; i++)
-                new_element[i] = new_element[0] + i * lvl->width;
+            int **added_element = malloc(lvl->height * sizeof(int*));
+            added_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
+            int **removed_element = malloc(lvl->height * sizeof(int*));
+            removed_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
+            for(int i = 1; i < lvl->height; i++) {
+                added_element[i] = added_element[0] + i * lvl->width;
+                removed_element[i] = removed_element[0] + i * lvl->width;
+            }
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
-                    new_element[y][x] = 0;
+                    added_element[y][x] = 0;
+                    removed_element[y][x] = 0;
                 }
             }
 
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
-                    for (int xx = x-1; xx < x+2; xx++) {
-                        for (int yy = y-1; yy < y+2; yy++) {
+                    int rx = rand();
+                    int ry = rand();
+                    for (int dx = 0; dx < 2; dx++) {
+                        int xx = x + (((dx+rx)%3)-1);
+                        for (int dy = 0; dy < 2; dy++) {
+                            int yy = y + (((dy+ry)%3)-1);
                             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
-                                if (lvl->tiles[yy][xx] != WALL && lvl->chemistry[y][x]->elements[element] > 1) {
-                                    lvl->chemistry[y][x]->elements[element] -= 1;
-                                    new_element[yy][xx] += 1;
+                                if (lvl->tiles[yy][xx] != WALL && lvl->chemistry[y][x]->elements[element] - removed_element[y][x] > 1) {
+                                    removed_element[y][x] += 1;
+                                    added_element[yy][xx] += 1;
                                 }
                             }
                         }
@@ -293,14 +310,16 @@ void level_step_chemistry(level* lvl) {
             }
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
-                    if (new_element[y][x] > 0) {
-                        lvl->chemistry[y][x]->elements[element] += new_element[y][x];
+                    if (added_element[y][x] > 0 || removed_element[y][x] > 0) {
+                        lvl->chemistry[y][x]->elements[element] += added_element[y][x] - removed_element[y][x];
                         lvl->chemistry[y][x]->stable = false;
                     }
                 }
             }
-            free((void*)new_element[0]);
-            free((void*)new_element);
+            free((void*)added_element[0]);
+            free((void*)added_element);
+            free((void*)removed_element[0]);
+            free((void*)removed_element);
         }
     }
 

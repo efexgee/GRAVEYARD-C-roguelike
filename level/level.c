@@ -36,7 +36,8 @@ level* make_level(void) {
         lvl->chemistry[i] = lvl->chemistry[0] + i * level_width;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
         lvl->chemistry[y][x] = make_constituents();
-        lvl->chemistry[y][x]->elements[wood] = 100;
+        lvl->chemistry[y][x]->elements[wood] = 300;
+        lvl->chemistry[y][x]->elements[air] = 20;
     }
 
 
@@ -57,8 +58,8 @@ level* make_level(void) {
     item* potion = malloc(sizeof(item)); // FIXME leaks
     potion->display = 'p';
     potion->chemistry = make_constituents();
-    potion->chemistry->elements[life] = 3;
-    potion->chemistry->elements[fire] = 3;
+    potion->chemistry->elements[life] = 30;
+    potion->chemistry->elements[fire] = 30;
     potion->name = "Healing Potion";
     potion->type = Potion;
     push_inventory(lvl->player, potion);
@@ -66,7 +67,7 @@ level* make_level(void) {
     item* poison = malloc(sizeof(item)); // FIXME leaks
     poison->display = 'p';
     poison->chemistry = make_constituents();
-    poison->chemistry->elements[venom] = 3;
+    poison->chemistry->elements[venom] = 30;
     poison->name = "Poison";
     poison->type = Potion;
     push_inventory(lvl->player, poison);
@@ -74,7 +75,7 @@ level* make_level(void) {
     item* antidote = malloc(sizeof(item)); // FIXME leaks
     antidote->display = 'p';
     antidote->chemistry = make_constituents();
-    antidote->chemistry->elements[banz] = 3;
+    antidote->chemistry->elements[banz] = 30;
     antidote->name = "Antidote";
     antidote->type = Potion;
     push_inventory(lvl->player, antidote);
@@ -82,7 +83,7 @@ level* make_level(void) {
     item* lamp = malloc(sizeof(item)); // FIXME leaks
     lamp->display = 'l';
     lamp->chemistry = make_constituents();
-    lamp->chemistry->elements[earth] = 3;
+    lamp->chemistry->elements[earth] = 30;
     lamp->name = "Lamp";
     lamp->type = Weapon;
     push_inventory(lvl->player, lamp);
