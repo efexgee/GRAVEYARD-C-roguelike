@@ -34,7 +34,7 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
 bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
     // Takes one step towards the target position if possible
     int acc_err; // Doesn't actually get used
-    int dy = (b_y - actor->y) / (b_x - actor->x);
+    int dy = (target_y - actor->y) / (target_x - actor->x);
 
     int new_x = actor->x;
     int new_y = actor->y;
@@ -61,15 +61,16 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
         if (!(is_position_valid(lvl, a_x, a_y))) {
             return false;
         }
+    }
 
     return true;
 }
 
-bool can_see(mobile *actor, target_x, target_y) {
+bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
     // This is between a thing and a position
     // It just wraps line_of_sight for easier English reading
     // Making a thing-to-thing function seems too specific
-    return (line_of_sight(actor->x, actor->y, target_x, target_y));
+    return (line_of_sight(lvl, actor->x, actor->y, target_x, target_y));
 }
 
 void draw_mobile(mobile *mob, int dx, int dy) {

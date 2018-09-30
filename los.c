@@ -1,6 +1,8 @@
 // #include <math.h>
 // #include <assert.h>
 
+#include "los.h"
+
 /*
 void draw_line(level *lvl, int cur_x, int cur_y, int target_x, int target_y) {
     slope = slope(cur_x, cur_y, target_x, target_y)
@@ -12,7 +14,7 @@ void draw_line(level *lvl, int cur_x, int cur_y, int target_x, int target_y) {
         draw(lvl, cur_x, cur_y)
 */
 
-void next_square(int *x, int *y, dy, int *acc_err) {
+void next_square(int *x, int *y, float dy, int *acc_err) {
     // Change a position to the next position along an angle (sort of)
     // This requires dy and acc_err to be passed in so this really can't
     // exist on its own. That feels weird.
