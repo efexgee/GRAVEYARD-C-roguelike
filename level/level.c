@@ -36,7 +36,6 @@ level* make_level(void) {
         lvl->chemistry[i] = lvl->chemistry[0] + i * level_height;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
         lvl->chemistry[x][y] = make_constituents();
-        lvl->chemistry[x][y]->elements[wood] = 300;
         lvl->chemistry[x][y]->elements[air] = 20;
     }
 
