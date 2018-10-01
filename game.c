@@ -25,7 +25,7 @@ bool is_position_valid(level *lvl, int x, int y) {
     } else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (!lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
-                fprintf(stderr, "%s: %s: (%d,%d)\n", "is_position_valid", "tile is unstackable mob", x, y);
+                fprintf(stderr, "%s: %s: %c at(%d,%d)\n", "is_position_valid", "tile is unstackable mob", lvl->mobs[i]->display, x, y);
                 return false;
             }
         }
