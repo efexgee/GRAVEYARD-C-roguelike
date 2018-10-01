@@ -48,7 +48,7 @@ void set_steps(int *x_step, float *y_step, int a_x, int a_y, int b_x, int b_y) {
     int dx = b_x - a_x;
     int dy = b_y - a_y;
 
-    *y_step = (float) dy / dx;
+    *y_step = (float) dy / abs(dx);
     *x_step = dx < 0 ? -1 : 1;
 }
 
