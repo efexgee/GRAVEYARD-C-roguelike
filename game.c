@@ -38,8 +38,10 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     if (is_position_valid(lvl, x, y)) {
         mob->x = x;
         mob->y = y;
+        //fprintf(stderr, "Moved to (%d,%d)\n", x, y);
         return true;
     } else {
+        fprintf(stderr, "Can't move!\n");
         return false;
     }
 }
@@ -52,7 +54,7 @@ void set_steps(int *x_step, float *y_step, int a_x, int a_y, int b_x, int b_y) {
     *x_step = dx < 0 ? -1 : 1;
 }
 
-bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
+void approach(level *lvl, mobile *actor, int *new_x, int *new_y, int target_x, int target_y) {
     // Takes one step towards the target position if possible
     //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
     int acc_err; // Doesn't actually get used :(
@@ -61,18 +63,15 @@ bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
 
     set_steps(&x_step, &y_step, actor->x, actor->y, target_x, target_y);
 
-    int new_x = actor->x;
-    int new_y = actor->y;
+    //fprintf(stderr, "I must consider %f every %d\n", y_step, x_step);
 
-    next_square(&new_x, &new_y, x_step, y_step, &acc_err);
+    // Pass x,y instead of actor?
+    *new_x = actor->x;
+    *new_y = actor->y;
 
-    if (is_position_valid(lvl, new_x, new_y)) {
-        actor->x = new_x;
-        actor->y = new_y;
-        return true;
-    } else {
-        return false;
-    }
+    next_square(new_x, new_y, x_step, y_step, &acc_err);
+
+    //fprintf(stderr, "I intend to move to (%d,%d)\n", new_x, new_y);
 }
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
@@ -84,15 +83,14 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
 
     set_steps(&x_step, &y_step, a_x, a_y, b_x, b_y);
 
-    while (!(a_x == b_x && a_y == b_y)) {
+    //while (!(a_x == b_x && a_y == b_y)) {
+    while (true) {
         next_square(&a_x, &a_y, x_step, y_step, &acc_err);
 
-        if (!(is_position_valid(lvl, a_x, a_y))) {
-            return false;
-        }
-    }
+        if (a_x == b_x && a_y == b_y) return true;
 
-    return true;
+        if (!(is_position_valid(lvl, a_x, a_y))) return false;
+    }
 }
 
 bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
@@ -226,6 +224,7 @@ void move_mobile(level *lvl, mobile *mob) {
     int y = mob->y;
     switch (mob->behavior) {
         case RandomWalk:
+            //fprintf(stderr, "RandomWalk\n");
             if (rand()%2 == 0) {
                 x += rand()%3 - 1;
             } else {
@@ -233,19 +232,20 @@ void move_mobile(level *lvl, mobile *mob) {
             }
             break;
         case KeyboardInput:
+            //fprintf(stderr, "KeyboardInput\n");
             x += keyboard_x;
             y += keyboard_y;
             keyboard_x = 0;
             keyboard_y = 0;
             break;
         case BeeLine:
+            //fprintf(stderr, "BeeLine\n");
             // approach() allows diagonal movement
+            //fprintf(stderr, "Can I see the player?\n");
             if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
                 print_message("You are spotted by a minotaur!");
                 mob->display = '>';
-                if (!(approach(lvl, mob, lvl->player->x, lvl->player->y))) {
-                    mob->emote = EMOTE_ANGRY;
-                }
+                approach(lvl, mob, &x, &y, lvl->player->x, lvl->player->y);
             } else {
                 print_message("The minotaur can't find you.");
                 mob->display = ICON_MINOTAUR;

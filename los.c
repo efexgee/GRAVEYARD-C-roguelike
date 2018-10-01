@@ -17,19 +17,22 @@ void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
     // This requires y_step and acc_err to be passed in so this really can't
     // exist on its own. That feels weird.
 
-    fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
+    //fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
 
     int ideal_y, adjust;
 
+    // use abs() instead?
     if (y_step == INFINITY || y_step == -INFINITY) {
         // Just moving vertically.
         //fprintf(stderr, "%s: y_step is infinity\n", "next_square");
         *y += y_step < 0 ? -1 : 1;
+        //fprintf(stderr, "set y = %d\n", *y);
         return;
     }
 
     // *x++ <-- Nooooooooooooooo!
     *x += x_step;
+    //fprintf(stderr, "set x = %d\n", *x);
 
     if (y_step == 0) {
         // Just moving horizontally
@@ -41,6 +44,7 @@ void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
 
     *y = round(ideal_y);
     // y = round(ideal_y = *y + y_step);  :.(
+    //fprintf(stderr, "set y = %d\n", *y);
 
     *acc_err += *y - ideal_y;
 
