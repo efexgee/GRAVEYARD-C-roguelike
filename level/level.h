@@ -9,6 +9,9 @@
 #define LVL_WIDTH 20;
 #define LVL_HEIGHT 20;
 
+#define ETHER '-';
+#define UNKNOWN ' ';
+
 #define WALL '#'
 #define FLOOR '.'
 #define OPEN_DOOR '-'

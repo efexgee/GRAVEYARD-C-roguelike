@@ -25,7 +25,7 @@ bool is_position_valid(level *lvl, int x, int y) {
     } else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (!lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
-                fprintf(stderr, "%s: %s: %c at(%d,%d)\n", "is_position_valid", "tile is unstackable mob", lvl->mobs[i]->display, x, y);
+                //fprintf(stderr, "%s: %s: %c at(%d,%d)\n", "is_position_valid", "tile is unstackable mob", lvl->mobs[i]->display, x, y);
                 return false;
             }
         }
@@ -124,16 +124,22 @@ void draw(level *lvl) {
         for (int y = 0; y < row; y++) {
             int xx = x - dx;
             int yy = y - dy;
+            // Positions which are part of the map
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
+                // Borders are always visible
                 char display;
-                if (lvl->items[yy][xx] != NULL) {
-                    display = lvl->items[yy][xx]->item->display;
+                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
+                    if (lvl->items[yy][xx] != NULL) {
+                        display = lvl->items[yy][xx]->item->display;
+                    } else {
+                        display = lvl->tiles[yy][xx];
+                    }
                 } else {
-                    display = lvl->tiles[yy][xx];
+                    display = ' ';
                 }
                 mvprintw(y, x, "%c", display);
             } else {
-                mvprintw(y, x, " ");
+                mvprintw(y, x, "%c", '-');
             }
         }
     }
