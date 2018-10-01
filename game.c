@@ -1,6 +1,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <string.h>
 
 #include "level/level.h"
 #include "mob/mob.h"
@@ -10,14 +11,26 @@ int keyboard_x, keyboard_y = 0;
 char message_banner[200];
 
 bool is_position_valid(level *lvl, int x, int y) {
-    if (lvl->tiles[y][x] == WALL) return false;
-    else {
+    //fprintf(stderr, "%s(%d, (%d, %d))\n", "is_position_valid", lvl, x, y);
+
+    if (x >= lvl->width || x < 0) {
+        fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "x is out of bounds", x);
+        return false;
+    } else if (y >= lvl->height || y < 0) {
+        fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "y is out of bounds", y);
+        return false;
+    } else if (lvl->tiles[y][x] == WALL) {
+        // from a performance standpoint, this should be the first test
+        return false;
+    } else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (!lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
+                fprintf(stderr, "%s: %s: (%d,%d)\n", "is_position_valid", "tile is unstackable mob", x, y);
                 return false;
             }
         }
     }
+
     return true;
 }
 
@@ -41,7 +54,7 @@ void set_steps(int *x_step, float *y_step, int a_x, int a_y, int b_x, int b_y) {
 
 bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
     // Takes one step towards the target position if possible
-    fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
+    //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
     int acc_err; // Doesn't actually get used :(
     int x_step;
     float y_step;
@@ -64,7 +77,7 @@ bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
     // This is between two positions, theoretically non-directional
-    fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
+    //fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
     int acc_err = 0;
     int x_step;
     float y_step;
@@ -86,7 +99,7 @@ bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
     // This is between a thing and a position
     // It just wraps line_of_sight for easier English reading
     // Making a thing-to-thing function seems too specific
-    fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "can_see", lvl, actor, target_x, target_y);
+    //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "can_see", lvl, actor, target_x, target_y);
     return (line_of_sight(lvl, actor->x, actor->y, target_x, target_y));
 }
 
@@ -291,15 +304,7 @@ int main() {
 
         int turn = 0;
         do {
-            fprintf(stderr, "Turn %d\n", turn++);
-
-            fprintf(stderr, "Start level valid check.\n");
-            for (int m=0; m < lvl->width; m++) {
-                for (int n=0; n < lvl->height; n++) {
-                    is_position_valid(lvl, m, n);
-                }
-            }
-            fprintf(stderr, "End level valid check.\n");
+            //fprintf(stderr, "Turn %d\n", turn++);
 
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {

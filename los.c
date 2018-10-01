@@ -17,13 +17,10 @@ void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
     // This requires y_step and acc_err to be passed in so this really can't
     // exist on its own. That feels weird.
 
-    // sanity check
-    fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
+    //fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
 
-    if (y_step < 0) {
-        fprintf(stderr, "%s: y_step is negative\n", "next_square");
-        return;
-    } else if (y_step == 0) {
+    // Need to handle these!
+    if (y_step == 0) {
         fprintf(stderr, "%s: y_step is zero\n", "next_square");
         return;
     } else if (y_step == INFINITY) {

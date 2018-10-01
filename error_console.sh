@@ -18,6 +18,4 @@ fi
 
 echo "Attaching to named pipe $ERRORS_FIFO"
 
-while true; do
-    cat "$ERRORS_FIFO" || exit 4
-done
+tail -f errors || exit 4
