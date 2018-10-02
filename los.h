@@ -5,6 +5,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-void next_square(int *x, int *y, int x_step, float y_step, int *acc_err);
+void next_square(int *x, int *y, int x_step, float y_step, float *acc_err);
 
 #endif

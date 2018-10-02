@@ -57,9 +57,9 @@ void set_steps(int *x_step, float *y_step, int a_x, int a_y, int b_x, int b_y) {
 void approach(level *lvl, mobile *actor, int *new_x, int *new_y, int target_x, int target_y) {
     // Takes one step towards the target position if possible
     //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
-    int acc_err; // Doesn't actually get used :(
     int x_step;
     float y_step;
+    float acc_err; // Doesn't actually get used :(
 
     set_steps(&x_step, &y_step, actor->x, actor->y, target_x, target_y);
 
@@ -77,9 +77,9 @@ void approach(level *lvl, mobile *actor, int *new_x, int *new_y, int target_x, i
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
     // This is between two positions, theoretically non-directional
     //fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
-    int acc_err = 0;
     int x_step;
     float y_step;
+    float acc_err = 0;
 
     set_steps(&x_step, &y_step, a_x, a_y, b_x, b_y);
 
