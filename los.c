@@ -19,7 +19,7 @@ void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
 
     //fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
 
-    int ideal_y, adjust;
+    int ideal_y, new_y, new_acc_err;
 
     // use abs() instead?
     if (y_step == INFINITY || y_step == -INFINITY) {
@@ -40,18 +40,21 @@ void next_square(int *x, int *y, int x_step, float y_step, int *acc_err) {
         return;
     }
 
+    // exact y
     ideal_y = *y + y_step;
 
-    *y = round(ideal_y);
-    // y = round(ideal_y = *y + y_step);  :.(
-    //fprintf(stderr, "set y = %d\n", *y);
+    // proposed new y
+    new_y = round(ideal_y);
 
-    *acc_err += *y - ideal_y;
+    // new acc err with proposed new y
+    new_acc_err = *acc_err + (new_y - ideal_y);
 
-    if (abs(*acc_err > 0.5)) {
-        adjust = *acc_err < 0 ? 1 : -1;
-
-        *y += adjust;
-        *acc_err += adjust;
+    // is new acc err too large?
+    if (abs(new_acc_err) > 0.5) {
+        new_y = round(ideal_y + (new_acc_err < 0 ? 0.5 : -0.5));
+        new_acc_err = *acc_err + (new_y - ideal_y);
     }
+
+    *y = new_y;
+    *acc_err = new_acc_err;
 }
