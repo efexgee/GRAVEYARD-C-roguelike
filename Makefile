@@ -38,7 +38,7 @@ strict:
 
 debug:
 	$(MAKE) clean
-	$(MAKE) CFLAGS="-g" game
+	$(MAKE) CFLAGS="-g" LDFLAGS="-g" game
 
 # clean up stuff, one step (note steps are tab-indented lines, each of which is executed as shell command in a subprocess using $(SHELL)
 # as the executable)
