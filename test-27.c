@@ -4,7 +4,7 @@
 
 #define X_STEP 1;
 #define Y_STEP 0.27;
-#define NUM_STEPS 4;
+#define NUM_STEPS 8;
 
 
 void main() {

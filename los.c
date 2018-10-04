@@ -1,17 +1,6 @@
 #include "los.h"
 #include <stdio.h>
 
-/*
-void draw_line(level *lvl, int cur_x, int cur_y, int target_x, int target_y) {
-    slope = slope(cur_x, cur_y, target_x, target_y)
-    y_step = slope / (target_x - cur_x)
-    // one step?
-    acc_error = 0
-    until next_square = end
-        next_square(&cur_x, &cur_y, y_step, &acc_error)
-        draw(lvl, cur_x, cur_y)
-*/
-
 void next_square(int *x, int *y, int x_step, float y_step, float *acc_err) {
     // Change a position to the next position along an angle (sort of)
     // This requires y_step and acc_err to be passed in so this really can't
@@ -54,7 +43,8 @@ void next_square(int *x, int *y, int x_step, float y_step, float *acc_err) {
     //printf("new_y=%d new_acc_err=%f\n", new_y, new_acc_err);
 
     // is new acc err too large?
-    if (abs(new_acc_err) > 0.5) {
+    if (fabs(new_acc_err) > 0.5) {
+        //printf("adjusting...\n");
         new_y = round(ideal_y + (new_acc_err < 0 ? 0.5 : -0.5));
         new_acc_err += new_y - ideal_y;
     }

@@ -6,8 +6,8 @@
 
 #include "../mob/mob.h"
 
-#define LVL_WIDTH 20;
-#define LVL_HEIGHT 20;
+#define LVL_WIDTH 40;
+#define LVL_HEIGHT 40;
 
 #define ETHER '-';
 #define UNKNOWN ' ';
