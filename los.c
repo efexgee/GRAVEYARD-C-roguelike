@@ -8,9 +8,6 @@ void next_square(int *x, int *y, int x_step, float y_step, float *acc_err) {
 
     //fprintf(stderr, "%s((%d, %d), %d, %.2f, %d)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
 
-    float ideal_y, new_acc_err;
-    int new_y;
-
     // use abs() instead?
     if (y_step == INFINITY || y_step == -INFINITY) {
         // Just moving vertically.
@@ -19,40 +16,47 @@ void next_square(int *x, int *y, int x_step, float y_step, float *acc_err) {
         return;
     }
 
-    *x += x_step;
 
     if (y_step == 0) {
         // Just moving horizontally
         //fprintf(stderr, "%s: y_step is zero\n", "next_square");
+        *x += x_step;
         return;
     }
 
-    // exact y
-    ideal_y = *y + y_step;
 
-    //printf("ideal_y=%f\n", ideal_y);
+    int y_jump = 1;
+    int x_jump = 1;
 
-    // proposed new y
-    new_y = round(ideal_y);
-
-    //printf("new_y=%d\n", new_y);
-
-    // new acc err with proposed new y
-    new_acc_err = *acc_err + (new_y - ideal_y);
-
-    //printf("new_y=%d new_acc_err=%f\n", new_y, new_acc_err);
-
-    // is new acc err too large?
-    if (fabs(new_acc_err) > 0.5) {
-        //printf("adjusting...\n");
-        new_y = round(ideal_y + (new_acc_err < 0 ? 0.5 : -0.5));
-        new_acc_err += new_y - ideal_y;
+    if (y_step < 0) {
+        y_jump = -1;
     }
 
-    //printf("new_y=%d new_acc_err=%f\n", new_y, new_acc_err);
+    if (x_step < 0) {
+        x_jump = -1;
+    }
 
-    *y = new_y;
-    *acc_err = new_acc_err;
+    if (fabs(y_step) > 1) {
+        *y += y_jump;
 
-    //printf("y=%d acc_err=%f\n", *y, *acc_err);
+        float x_slope = 1 / y_step;
+        float ideal_x = *x + *acc_err + x_slope; 
+
+        if (fabs(ideal_x - *x) < 0.5) {
+	        *acc_err = ideal_x - *x;
+        } else if (fabs(ideal_x - *x) > 0.5) {
+            *x += x_jump;
+            *acc_err = ideal_x - *x;
+        }
+    } else {
+        *x += x_step;
+        float ideal_y = *y + *acc_err + y_step;
+
+        if (fabs(ideal_y - *y) < 0.5) {
+	        *acc_err = ideal_y - *y;
+        } else if (fabs(ideal_y - *y) > 0.5) {
+            *y += y_jump;
+            *acc_err = ideal_y - *y;
+        }
+    }
 }
