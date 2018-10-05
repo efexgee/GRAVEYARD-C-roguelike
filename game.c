@@ -90,6 +90,8 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
         if (a_x == b_x && a_y == b_y) return true;
 
         if (!(is_position_valid(lvl, a_x, a_y))) return false;
+
+        lvl->tiles[a_y][a_x] = '+';
     }
 }
 
@@ -128,11 +130,15 @@ void draw(level *lvl) {
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
                 // Borders are always visible
                 char display;
-                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
+                //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
+                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[yy][xx] == '+' ) {
                     if (lvl->items[yy][xx] != NULL) {
                         display = lvl->items[yy][xx]->item->display;
                     } else {
                         display = lvl->tiles[yy][xx];
+                        if (lvl->tiles[yy][xx] == '+') {
+                            lvl->tiles[yy][xx] = ' ';
+                        }
                     }
                 } else {
                     display = ' ';
@@ -244,23 +250,16 @@ void move_mobile(level *lvl, mobile *mob) {
             keyboard_x = 0;
             keyboard_y = 0;
             break;
-        case BeeLine:
+        case Stationary:
             //fprintf(stderr, "BeeLine\n");
             // approach() allows diagonal movement
             //fprintf(stderr, "Can I see the player?\n");
             if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
                 print_message("You are spotted by a minotaur!");
                 mob->display = '>';
-                approach(lvl, mob, &x, &y, lvl->player->x, lvl->player->y);
             } else {
                 print_message("The minotaur can't find you.");
                 mob->display = ICON_MINOTAUR;
-                // same as RandomWalk - should be function?
-                if (rand()%2 == 0) {
-                    x += rand()%3 - 1;
-                } else {
-                    y += rand()%3 - 1;
-                }
             }
             break;
     }

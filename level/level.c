@@ -54,9 +54,11 @@ level* make_level(void) {
 
         // hard-coded test mob
         if (i == 0) {
+            lvl->mobs[i]->x = level_width / 2;
+            lvl->mobs[i]->y = level_height / 2;
             lvl->mobs[i]->display = ICON_MINOTAUR;
             lvl->mobs[i]->name = malloc(sizeof(char)*9);
-            lvl->mobs[i]->behavior = BeeLine;
+            lvl->mobs[i]->behavior = Stationary;
             strcpy(lvl->mobs[i]->name, "minotaur");
             // only this mob
             break;
