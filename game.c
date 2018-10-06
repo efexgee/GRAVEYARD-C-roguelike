@@ -309,7 +309,7 @@ int main() {
 
         int turn = 0;
         do {
-            //fprintf(stderr, "Turn %d\n", turn++);
+            fprintf(stderr, "Turn %d=========================================\n", turn++);
 
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {
