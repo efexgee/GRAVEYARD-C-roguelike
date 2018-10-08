@@ -1,64 +1,136 @@
 #include "los.h"
 #include <stdio.h>
 
-void next_square(int *x, int *y, int x_step, float y_step, float *acc_err) {
+#define TRUE 1
+#define FALSE 0
+
+void update(int *stepper, int *bumper, float slope, int step, int bump, float *err) {
+    // calculate where the next point should be
+    // make sure this ends up as a float!
+    float ideal = *bumper + *err + slope;
+
+    fprintf(stderr, "[in](s%2d, b%2d) m %3.2f s %2d b %2d ideal %6.2f err", *stepper, *bumper, slope, step, bump, ideal, *err);
+
+    // increment the stepper no matter what
+    *stepper += step;
+
+    int bumped = FALSE;
+
+    if (fabs(ideal - *bumper) >= 0.5) {
+        // more than half-way, round up
+        *bumper += bump;
+        bumped = TRUE;
+        // new error is distance down from new bumper to the ideal
+        *err = ideal - *bumper;
+    } else {
+        // less than half-way, leave bumper as is
+        // new error is increased by distance from bumper to ideal
+        *err += slope;
+    }
+
+    //fprintf(stderr, "\n");
+    //fprintf(stderr, "[out %s] (s%2d, b%2d) m %3.2f s %2d b %2d ideal %6.2f err %6.2f %5.2f\n", "next_square", *stepper, *bumper, slope, step, bump, ideal, *err, bumped ? 1 : ideal - *bumper);
+    fprintf(stderr, "[out](s%2d, b%2d) err %6.2f %5.2f\n", *stepper, *bumper, *err, bumped ? 1 : ideal - *bumper);
+}
+
+void next_square(int *x, int *y, int x_direction, float slope, float *err) {
     // Change a position to the next position along an angle (sort of)
-    // This requires y_step and acc_err to be passed in so this really can't
+    // This requires slope and err to be passed in so this really can't
     // exist on its own. That feels weird.
 
-    fprintf(stderr, "%s((%d, %d), x_step=%d, y_step=%.2f, acc_err=%.2f)\n", "next_square", *x, *y, x_step, y_step, *acc_err);
+    //fprintf(stderr, "%s((%d, %d), x_dir=%d, slope=%.2f, err=%.2f)\n", "next_square", *x, *y, x_direction, slope, *err);
 
-    // use abs() instead?
-    if (y_step == INFINITY || y_step == -INFINITY) {
-        // Just moving vertically.
-        fprintf(stderr, "%s: y_step is infinity\n", "next_square");
-        *y += y_step < 0 ? -1 : 1;
+    // Handle vertical lines
+    if (slope == INFINITY) {
+        *y += x_direction;
+        return;
+    } else if (slope == -INFINITY) {
+        *y -= x_direction;
         return;
     }
 
-
-    if (y_step == 0) {
-        // Just moving horizontally
-        fprintf(stderr, "%s: y_step is zero\n", "next_square");
-        *x += x_step;
+    // Handle horizontal lines
+    if (slope == 0) {
+        *x += x_direction;
         return;
     }
 
-    int y_jump = 1;
-    int x_jump = 1;
+    // Set defaults to save typing in the if forest
+    int *stepper = x;
+    int *bumper = y;
+    int step = 1;
+    int bump = 1;
 
-    if (y_step < 0) {
-        y_jump = -1;
-    }
-
-    if (x_step < 0) {
-        x_jump = -1;
-    }
-
-    if (fabs(y_step) > 1) {
-        *y += y_jump;
-
-        float x_slope = 1 / y_step;
-        float ideal_x = *x + *acc_err + x_slope; 
-
-        fprintf(stderr, "%s: steep slope x_jump=%d y_jump=%d: x_slope=%.2f ideal_x=%.2f y=%d\n", "next_square", x_jump, y_jump, x_slope, ideal_x, *y);
-
-        if (fabs(ideal_x - *x) < 0.5) {
-	        *acc_err = ideal_x - *x;
-        } else if (fabs(ideal_x - *x) > 0.5) {
-            *x += x_jump;
-            *acc_err = ideal_x - *x;
+    if (x_direction >= 0) {
+    // Increasing X
+        if (slope < 0) {
+        // Negative slope
+            if (fabs(slope) <= 1) {
+                // Octant I
+                fprintf(stderr, "Octant %-4s ", "I");
+                bump = -1;
+            } else {
+                // Octant II
+                fprintf(stderr, "Octant %-4s ", "II");
+                stepper = y;
+                step = -1;
+                bumper = x;
+                slope *= -1;
+                slope = 1 / slope;
+            }
+        } else {
+        // Positive slope
+            if (fabs(slope) > 1) {
+                // Octant VII
+                fprintf(stderr, "Octant %-4s ", "VII");
+                stepper = y;
+                bumper = x;
+                slope = 1 / slope;
+            } else {
+                // Octant VIII
+                fprintf(stderr, "Octant %-4s ", "VIII");
+                // Yay! Lazytown!
+            }
         }
     } else {
-        *x += x_step;
-        float ideal_y = *y + *acc_err + y_step;
-
-        fprintf(stderr, "%s: steep slope x_jump=%d y_jump=%d: ideal_y=%.2f x=%d\n", "next_square", x_jump, y_jump, ideal_y, *x);
-        if (fabs(ideal_y - *y) < 0.5) {
-	        *acc_err = ideal_y - *y;
-        } else if (fabs(ideal_y - *y) > 0.5) {
-            *y += y_jump;
-            *acc_err = ideal_y - *y;
+    // Decreasing X
+        if (slope >= 0) {
+        // Positive slope
+            if (fabs(slope) > 1) {
+                // Octant III
+                fprintf(stderr, "Octant %-4s ", "III");
+                stepper = y;
+                bumper = x;
+                step = -1;
+                bump = -1;
+                slope *= -1;
+                slope = 1 / slope;
+            } else {
+                // Octant IV
+                fprintf(stderr, "Octant %-4s ", "IV");
+                step = -1;
+                bump = -1;
+                slope *= -1;
+            }
+        } else {
+        // Negative slope
+            if (fabs(slope) <= 1) {
+                // Octant V
+                fprintf(stderr, "Octant %-4s ", "V");
+                step = -1;
+                slope *= -1;
+            } else {
+                // Octant VI
+                fprintf(stderr, "Octant %-4s ", "VI");
+                stepper = y;
+                bumper = x;
+                bump = -1;
+                slope = 1 / slope;
+            }
         }
     }
+
+    fprintf(stderr, "x %c ", (x_direction < 0 ? '<' : '>'));
+    //fprintf(stderr, "\n");
+    update(stepper, bumper, slope, step, bump, err);
 }

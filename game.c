@@ -30,7 +30,6 @@ bool is_position_valid(level *lvl, int x, int y) {
             }
         }
     }
-
     return true;
 }
 
@@ -46,30 +45,32 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     }
 }
 
-void set_steps(int *x_step, float *y_step, int a_x, int a_y, int b_x, int b_y) {
+void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int b_y) {
     int dx = b_x - a_x;
     int dy = b_y - a_y;
 
-    *y_step = (float) dy / abs(dx);
+    *slope = (float) dy / dx;
     *x_step = dx < 0 ? -1 : 1;
+
+    fprintf(stderr, "[%s] xs %2d m %6.2f (%2d/%2d) ax %2d ay %2d bx %2d by %2d\n", "set_steps", *x_step, *slope, dy, dx, a_x, a_y, b_x, b_y);
 }
 
 void approach(level *lvl, mobile *actor, int *new_x, int *new_y, int target_x, int target_y) {
     // Takes one step towards the target position if possible
     //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
     int x_step;
-    float y_step;
+    float slope;
     float acc_err; // Doesn't actually get used :(
 
-    set_steps(&x_step, &y_step, actor->x, actor->y, target_x, target_y);
+    set_steps(&x_step, &slope, actor->x, actor->y, target_x, target_y);
 
-    //fprintf(stderr, "I must consider %f every %d\n", y_step, x_step);
+    //fprintf(stderr, "I must consider %f every %d\n", slope, x_step);
 
     // Pass x,y instead of actor?
     *new_x = actor->x;
     *new_y = actor->y;
 
-    next_square(new_x, new_y, x_step, y_step, &acc_err);
+    next_square(new_x, new_y, x_step, slope, &acc_err);
 
     //fprintf(stderr, "I intend to move to (%d,%d)\n", new_x, new_y);
 }
@@ -78,14 +79,14 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
     // This is between two positions, theoretically non-directional
     //fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
     int x_step;
-    float y_step;
+    float slope;
     float acc_err = 0;
 
-    set_steps(&x_step, &y_step, a_x, a_y, b_x, b_y);
+    set_steps(&x_step, &slope, a_x, a_y, b_x, b_y);
 
     //while (!(a_x == b_x && a_y == b_y)) {
     while (true) {
-        next_square(&a_x, &a_y, x_step, y_step, &acc_err);
+        next_square(&a_x, &a_y, x_step, slope, &acc_err);
 
         if (a_x == b_x && a_y == b_y) return true;
 
@@ -311,7 +312,12 @@ int main() {
         do {
             fprintf(stderr, "Turn %d=========================================\n", turn++);
 
-            for (int i=0; i < lvl->mob_count; i++) {
+            // Need to update the player before all other actors
+            // so they interact with where he is drawn, not where
+            // he was when the update loop started
+            move_mobile(lvl, lvl->mobs[lvl->mob_count - 1]);
+            // Be sure not to update the player again
+            for (int i=0; i < lvl->mob_count - 1; i++) {
                 if (lvl->mobs[i]->active) {
                     move_mobile(lvl, lvl->mobs[i]);
                 }
