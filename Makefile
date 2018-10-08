@@ -1,5 +1,7 @@
 # supported targets:
 #   all, <default>: update dependencies on .h files, then build game
+#   run: build strict, then execute with stderr redirected to errors FIFO
+#   console: run error console printing contents of errors FIFO
 #   game: just build game without updating dependencies
 #   depend: explicitly rebuild dependencies
 #   ansic: test compile as ANSI C
@@ -57,6 +59,14 @@ wtf:
 		-e '^.c:' \
 		-e 'COMPILE.c =' \
 		-e 'LINK.c ='
+
+errors:
+	mkfifo errors
+run: strict errors
+	./game 2> errors || reset
+console: errors
+	tail -f errors || exit 4
+
 # DO NOT DELETE
 
 game.o: level/level.h mob/mob.h mob/mob.h los.h
