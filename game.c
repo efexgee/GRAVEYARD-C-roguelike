@@ -7,7 +7,7 @@
 #include "mob/mob.h"
 #include "los.h"
 
-int keyboard_x, keyboard_y = 0;
+int keyboard_x = 0, keyboard_y = 0;
 char message_banner[200];
 
 bool is_position_valid(level *lvl, int x, int y) {
@@ -165,7 +165,7 @@ void draw(level *lvl) {
 }
 
 void print_message(char *msg) {
-    snprintf(message_banner, 200, msg);
+    strncpy(message_banner, msg, 200);
 }
 
 void drop_item(level *lvl, mobile *mob) {

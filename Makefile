@@ -65,7 +65,7 @@ errors:
 run: strict errors
 	./game 2> errors || reset
 console: errors
-	tail -f errors || exit 4
+	tail -f errors 
 
 # DO NOT DELETE
 

@@ -4,7 +4,7 @@
 #include "level.h"
 #include "../mob/mob.h"
 
-void partition(level *lvl);
+static void partition(level *lvl);
 
 
 level* make_level(void) {
@@ -113,7 +113,7 @@ int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
     }
 }
 
-void partition(level *lvl) {
+static void partition(level *lvl) {
     int **partitioning = malloc(lvl->height * sizeof (int*));
     for (int i = 0 ; i != lvl->height ; i++) partitioning[i] = malloc (lvl->width*sizeof(int));
     int **potential_doors= malloc(lvl->height * sizeof (int*));

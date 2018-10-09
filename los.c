@@ -9,7 +9,7 @@ void update(int *stepper, int *bumper, float slope, int step, int bump, float *e
     // make sure this ends up as a float!
     float ideal = *bumper + *err + slope;
 
-    fprintf(stderr, "[in](s%2d, b%2d) m %3.2f s %2d b %2d ideal %6.2f err", *stepper, *bumper, slope, step, bump, ideal, *err);
+    fprintf(stderr, "[in](s%2d, b%2d) m %3.2f s %2d b %2d ideal %6.2f err %6.2f", *stepper, *bumper, slope, step, bump, ideal, *err);
 
     // increment the stepper no matter what
     *stepper += step;
