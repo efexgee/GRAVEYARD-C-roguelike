@@ -17,7 +17,7 @@ all: game
 # NOTE that "game" is actually a binary created, so this won't run again if the file "game" is newer than game.c and level.c
 # NOTE that other targets like all, clean, ansic do not correspond to actual files created, so they always run if called, because their
 # target file is not there
-game: game.c level/level.c level/level.h mob/mob.c mob/mob.h chemistry/chemistry.c chemistry/chemistry.h simulation/simulation.h simulation/simulation.c simulation/min_heap.h simulation/min_heap.c
+game: game.c game.h level/level.c level/level.h mob/mob.c mob/mob.h chemistry/chemistry.c chemistry/chemistry.h simulation/simulation.h simulation/simulation.c simulation/min_heap.h simulation/min_heap.c
 
 # clean up stuff, one step (note steps are tab-indented lines, each of which is executed as shell command in a subprocess using $(SHELL)
 # as the executable)
