@@ -18,7 +18,7 @@ LDLIBS = -lcurses -lm
 all: depend game
 
 # this project contains multiple C files, which are dependent on header files that we find using makedepend, so header files  are not listed here
-SRCS  = game.c level/level.c mob/mob.c los.c
+SRCS  = game.c level/level.c mob/mob.c los/los.c
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
 # this target is dependent on all objects
@@ -64,12 +64,13 @@ errors:
 	mkfifo errors
 run: strict errors
 	./game 2> errors || reset
+# This only checks that "errors" exists, not whether it's a pipe
 console: errors
 	tail -f errors 
 
 # DO NOT DELETE
 
-game.o: level/level.h mob/mob.h mob/mob.h los.h
+game.o: level/level.h mob/mob.h mob/mob.h los/los.h
 level/level.o: level/level.h mob/mob.h
 mob/mob.o: mob/mob.h
-los.o: los.h
+los.o: los/los.h

@@ -5,14 +5,12 @@
 
 #include "level/level.h"
 #include "mob/mob.h"
-#include "los.h"
+#include "los/los.h"
 
 int keyboard_x = 0, keyboard_y = 0;
 char message_banner[200];
 
 bool is_position_valid(level *lvl, int x, int y) {
-    //fprintf(stderr, "%s(%d, (%d, %d))\n", "is_position_valid", lvl, x, y);
-
     if (x >= lvl->width || x < 0) {
         fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "x is out of bounds", x);
         return false;
@@ -25,7 +23,6 @@ bool is_position_valid(level *lvl, int x, int y) {
     } else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (!lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
-                //fprintf(stderr, "%s: %s: %c at(%d,%d)\n", "is_position_valid", "tile is unstackable mob", lvl->mobs[i]->display, x, y);
                 return false;
             }
         }
@@ -37,10 +34,8 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     if (is_position_valid(lvl, x, y)) {
         mob->x = x;
         mob->y = y;
-        //fprintf(stderr, "Moved to (%d,%d)\n", x, y);
         return true;
     } else {
-        fprintf(stderr, "Can't move!\n");
         return false;
     }
 }
@@ -52,32 +47,26 @@ void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int b_y) {
     *slope = (float) dy / dx;
     *x_step = dx < 0 ? -1 : 1;
 
-    fprintf(stderr, "[%s] xs %2d m %6.2f (%2d/%2d) ax %2d ay %2d bx %2d by %2d\n", "set_steps", *x_step, *slope, dy, dx, a_x, a_y, b_x, b_y);
+    //fprintf(stderr, "[%s] xs %2d m %6.2f (%2d/%2d) ax %2d ay %2d bx %2d by %2d\n", "set_steps", *x_step, *slope, dy, dx, a_x, a_y, b_x, b_y);
 }
 
 void approach(level *lvl, mobile *actor, int *new_x, int *new_y, int target_x, int target_y) {
     // Takes one step towards the target position if possible
-    //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "approach", lvl, actor, target_x, target_y);
     int x_step;
     float slope;
     float acc_err; // Doesn't actually get used :(
 
     set_steps(&x_step, &slope, actor->x, actor->y, target_x, target_y);
 
-    //fprintf(stderr, "I must consider %f every %d\n", slope, x_step);
-
     // Pass x,y instead of actor?
     *new_x = actor->x;
     *new_y = actor->y;
 
     next_square(new_x, new_y, x_step, slope, &acc_err);
-
-    //fprintf(stderr, "I intend to move to (%d,%d)\n", new_x, new_y);
 }
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
     // This is between two positions, theoretically non-directional
-    //fprintf(stderr, "%s(%d, (%d, %d), (%d, %d))\n", "line_of_sight", lvl, a_x, a_y, b_x, b_y);
     int x_step;
     float slope;
     float acc_err = 0;
@@ -100,7 +89,6 @@ bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
     // This is between a thing and a position
     // It just wraps line_of_sight for easier English reading
     // Making a thing-to-thing function seems too specific
-    //fprintf(stderr, "%s(%d, %d, (%d, %d))\n", "can_see", lvl, actor, target_x, target_y);
     return (line_of_sight(lvl, actor->x, actor->y, target_x, target_y));
 }
 
@@ -146,7 +134,7 @@ void draw(level *lvl) {
                 }
                 mvprintw(y, x, "%c", display);
             } else {
-                mvprintw(y, x, "%c", '-');
+                mvprintw(y, x, "%c", ' ');
             }
         }
     }
@@ -237,7 +225,6 @@ void move_mobile(level *lvl, mobile *mob) {
     int y = mob->y;
     switch (mob->behavior) {
         case RandomWalk:
-            //fprintf(stderr, "RandomWalk\n");
             if (rand()%2 == 0) {
                 x += rand()%3 - 1;
             } else {
@@ -245,16 +232,13 @@ void move_mobile(level *lvl, mobile *mob) {
             }
             break;
         case KeyboardInput:
-            //fprintf(stderr, "KeyboardInput\n");
             x += keyboard_x;
             y += keyboard_y;
             keyboard_x = 0;
             keyboard_y = 0;
             break;
         case Stationary:
-            //fprintf(stderr, "BeeLine\n");
             // approach() allows diagonal movement
-            //fprintf(stderr, "Can I see the player?\n");
             if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
                 print_message("You are spotted by a minotaur!");
                 mob->display = '>';
@@ -310,7 +294,7 @@ int main() {
 
         int turn = 0;
         do {
-            fprintf(stderr, "Turn %d=========================================\n", turn++);
+            fprintf(stderr, "=== Turn %3d ============================================\n", turn++);
 
             // Need to update the player before all other actors
             // so they interact with where he is drawn, not where
