@@ -10,6 +10,7 @@ int main(void)
     SRunner *sr;
 
     sr = srunner_create(make_mheap_suite());
+    srunner_add_suite(sr, make_simulation_suite());
     srunner_add_suite(sr, make_chemistry_suite());
 
     srunner_run_all(sr, CK_NORMAL);

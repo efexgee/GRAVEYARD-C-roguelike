@@ -5,10 +5,11 @@
 
 #include "../chemistry/chemistry.h"
 
-enum Behavior {RandomWalk, KeyboardInput};
 enum item_type {Weapon, Potion, Creature};
 
 struct InventoryItem;
+
+struct Level;
 
 typedef struct {
     char display;
@@ -28,15 +29,18 @@ typedef struct Mobile {
     item base;
     int x;
     int y;
+    struct Level *lvl;
     bool active;
     bool stacks;
-    enum Behavior behavior;
     char emote;
+    void *state;
 } mobile;
 
 #define ICON_HUMAN '@'
 #define ICON_GOBLIN 'o'
 #define ICON_ORC 'O'
+#define ICON_UMBER_HULK_AWAKE 'U'
+#define ICON_UMBER_HULK_ASLEEP 'z'
 
 #define OUCH '!'
 
@@ -49,4 +53,11 @@ void destroy_item(item *itm);
 
 void rotate_inventory(mobile* mob);
 bool quaff(mobile* mob);
+
+int never_next_firing(void* mob);
+void dummy_fire(void* mob);
+int every_turn_firing(void* mob);
+void player_move_fire(void* vmob);
+int random_walk_next_firing(void* mob);
+void random_walk_fire(void* mob);
 #endif

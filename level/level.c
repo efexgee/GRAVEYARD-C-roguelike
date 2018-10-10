@@ -6,6 +6,22 @@
 
 void partition(level *lvl);
 
+void umber_hulk_fire(void* vmob) {
+    mobile *mob = (mobile*)vmob;
+if (rand()/(float)RAND_MAX > 0.8) {
+        if (*(bool*)mob->state) {
+            *(bool*)mob->state = false;
+            mob->base.display = ICON_UMBER_HULK_ASLEEP;
+        } else {
+            *(bool*)mob->state = true;
+            mob->base.display = ICON_UMBER_HULK_AWAKE;
+        }
+    }
+
+    if (*(bool*)mob->state) {
+        random_walk_fire(vmob);
+    }
+}
 
 level* make_level(void) {
     level *lvl = malloc(sizeof *lvl);
@@ -14,9 +30,10 @@ level* make_level(void) {
 
     lvl->width = level_width;
     lvl->height = level_height;
+    lvl->keyboard_x = lvl->keyboard_y = 0;
     lvl->mob_count = 101;
     lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile*)));
-    for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob();
+    for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob(lvl);
     lvl->tiles = malloc(level_width * sizeof(unsigned char*));
     lvl->tiles[0] = malloc(level_height * level_width * sizeof(unsigned char));
     for (int i = 1; i < level_width; i++)
@@ -42,12 +59,17 @@ level* make_level(void) {
 
     lvl->chem_sys = make_default_chemical_system();
 
+    lvl->sim = malloc(sizeof(struct simulation));
+    lvl->sim->num_agents = lvl->mob_count;
+    lvl->sim->agents = malloc(lvl->sim->num_agents*sizeof(struct agent));
+    lvl->sim->queue = make_mheap();
 
     partition(lvl);
 
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
-    lvl->player->behavior = KeyboardInput;
+    lvl->sim->agents[lvl->mob_count-1].next_firing = every_turn_firing;
+    lvl->sim->agents[lvl->mob_count-1].fire = player_move_fire;
     ((item*)lvl->player)->health = 10;
     ((item*)lvl->player)->display = ICON_HUMAN;
     ((item*)lvl->player)->name = malloc(sizeof(char)*9);
@@ -93,19 +115,39 @@ level* make_level(void) {
     for (int i=0; i < lvl->mob_count-1; i++) {
         lvl->mobs[i]->x = rand()%(level_width-2) + 1;
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
-        lvl->mobs[i]->behavior = RandomWalk;
         lvl->mobs[i]->active = true;
 
-        if (rand()%2 == 0) {
-            ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
-            lvl->mobs[i]->stacks = true;
-            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
-            strcpy(((item*)lvl->mobs[i])->name, "goblin");
-        } else {
-            ((item*)lvl->mobs[i])->display = ICON_ORC;
-            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
-            strcpy(((item*)lvl->mobs[i])->name, "orc");
+        switch (rand()%3) {
+            case 0:
+                ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
+                lvl->mobs[i]->stacks = true;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
+                lvl->sim->agents[i].next_firing = random_walk_next_firing;
+                lvl->sim->agents[i].fire = random_walk_fire;
+                strcpy(((item*)lvl->mobs[i])->name, "goblin");
+                break;
+            case 1:
+                ((item*)lvl->mobs[i])->display = ICON_ORC;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+                lvl->sim->agents[i].next_firing = random_walk_next_firing;
+                lvl->sim->agents[i].fire = random_walk_fire;
+                strcpy(((item*)lvl->mobs[i])->name, "orc");
+                break;
+            default:
+                ((item*)lvl->mobs[i])->display = ICON_UMBER_HULK_AWAKE;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+                lvl->mobs[i]->state = malloc(sizeof(bool));
+                *(bool*)lvl->mobs[i]->state = false;
+                lvl->sim->agents[i].next_firing = random_walk_next_firing;
+                lvl->sim->agents[i].fire = umber_hulk_fire;
+                strcpy(((item*)lvl->mobs[i])->name, "umber hulk");
         }
+    }
+    for (int i = 0; i < lvl->mob_count; i++) {
+        lvl->sim->agents[i].state = (void*)lvl->mobs[i];
+        int next_firing = lvl->sim->agents[i].next_firing(&lvl->sim->agents[i].state);
+        mheap_push(lvl->sim->queue, &lvl->sim->agents[i], next_firing);
+
     }
 
     return lvl;
@@ -249,3 +291,26 @@ item* level_pop_item(level *lvl, int x, int y) {
         return itm;
     }
 }
+
+bool is_position_valid(level *lvl, int x, int y) {
+    if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) return false;
+    else {
+        for (int i=0; i < lvl->mob_count; i++) {
+            if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
+    if (is_position_valid(lvl, x, y)) {
+        mob->x = x;
+        mob->y = y;
+        return true;
+    } else {
+        return false;
+    }
+}
+

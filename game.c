@@ -4,32 +4,10 @@
 
 #include "level/level.h"
 #include "mob/mob.h"
+#include "simulation/simulation.h"
 
-int keyboard_x, keyboard_y = 0;
 char message_banner[200];
 
-
-bool is_position_valid(level *lvl, int x, int y) {
-    if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) return false;
-    else {
-        for (int i=0; i < lvl->mob_count; i++) {
-            if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
-    if (is_position_valid(lvl, x, y)) {
-        mob->x = x;
-        mob->y = y;
-        return true;
-    } else {
-        return false;
-    }
-}
 
 void draw_mobile(mobile *mob, int dx, int dy) {
     char display = ((item*)mob)->display;
@@ -163,16 +141,16 @@ int get_input(level *lvl) {
 
     switch (input) {
         case KEY_UP:
-            keyboard_y = -1;
+            lvl->keyboard_y = -1;
             break;
         case KEY_DOWN:
-            keyboard_y = 1;
+            lvl->keyboard_y = 1;
             break;
         case KEY_RIGHT:
-            keyboard_x = 1;
+            lvl->keyboard_x = 1;
             break;
         case KEY_LEFT:
-            keyboard_x = -1;
+            lvl->keyboard_x = -1;
             break;
         case 'i':
             inventory = inventory_string(lvl->player, 200);
@@ -233,52 +211,6 @@ int get_input(level *lvl) {
     return return_code;
 }
 
-void move_mobile(level *lvl, mobile *mob) {
-    int x = mob->x;
-    int y = mob->y;
-    switch (mob->behavior) {
-        case RandomWalk:
-            if (rand()%2 == 0) {
-                x += rand()%3 - 1;
-            } else {
-                y += rand()%3 - 1;
-            }
-            break;
-        case KeyboardInput:
-            x += keyboard_x;
-            y += keyboard_y;
-            keyboard_x = 0;
-            keyboard_y = 0;
-            break;
-    }
-    if (x != mob->x || y != mob->y) {
-        if (!(move_if_valid(lvl, mob, x, y))) {
-            mob->emote = OUCH;
-            if (rand()%100 > 95) {
-                char *msg;
-                switch (rand()%4) {
-                    case 0:
-                        msg = "Mother fucker!";
-                        break;
-                    case 1:
-                        msg = "Shitting shit!";
-                        break;
-                    case 2:
-                        msg = "Jesus H. Christ!";
-                        break;
-                    case 3:
-                        msg = "Poop balls!";
-                        break;
-                }
-                char *full_msg = malloc(sizeof(char)*200);
-                snprintf(full_msg, 200, "You hear the %s say \"%s\"", ((item*)mob)->name, msg);
-                print_message(full_msg);
-                free(full_msg);
-            }
-        }
-    }
-}
-
 void step_chemistry(chemical_system *sys, constituents *chem, constituents *context) {
     for (int i = 0; i < 3; i++) {
         bool is_stable = chem->stable;
@@ -306,7 +238,6 @@ void step_item(level *lvl, item *itm, constituents *chem_ctx) {
 
 void step_mobile(level *lvl, mobile *mob) {
     constituents *chemistry = ((item*)mob)->chemistry;
-    move_mobile(lvl, mob);
     if (lvl->chemistry[mob->x][mob->y]->elements[air] > 5) {
         lvl->chemistry[mob->x][mob->y]->elements[air] -= 5;
     } else {
@@ -397,6 +328,7 @@ void level_step_chemistry(level* lvl) {
 
 int main() {
         int ch;
+        int turn = 0;
         level *lvl;
 
         srand(time(NULL));
@@ -416,6 +348,9 @@ int main() {
                 getch();
                 break;
             }
+
+            turn++;
+            sync_simulation(lvl->sim, turn*1000);
 
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {

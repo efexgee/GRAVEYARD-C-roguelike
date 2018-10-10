@@ -1,18 +1,22 @@
+#include <limits.h>
+#include <math.h>
 #include <stdio.h>
 
 #include "mob.h"
+#include "../level/level.h"
 
-mobile* make_mob() {
+mobile* make_mob(struct Level *lvl) {
     mobile *mob = malloc(sizeof(mobile));
     ((item*)mob)->display = ' ';
     ((item*)mob)->chemistry = make_constituents();
     ((item*)mob)->type = Creature;
+    mob->state = NULL;
+    mob->lvl = lvl;
     mob->x = 0;
     mob->y = 0;
     ((item*)mob)->health = 1;
     mob->active = false;
     mob->stacks = false;
-    mob->behavior = RandomWalk;
     mob->emote = false;
     ((item*)mob)->contents = NULL;
     return mob;
@@ -26,6 +30,9 @@ void destroy_mob(mobile *mob) {
         inv = next;
     }
     free((void*)((item*)mob)->name);
+    if (mob->state != NULL) {
+        free(mob->state);
+    }
     free((void*)mob);
 }
 
@@ -99,4 +106,56 @@ bool quaff(mobile* mob) {
         return true;
     }
     return false;
+}
+
+int never_next_firing(void* mob) {
+    return INT_MAX;
+}
+
+void dummy_fire(void* mob) {
+}
+
+int every_turn_firing(void* mob) {
+    return 1000;
+}
+
+void player_move_fire(void* vmob) {
+    mobile *mob = (mobile*)vmob;
+    int x = mob->x + mob->lvl->keyboard_x;
+    int y = mob->y + mob->lvl->keyboard_y;
+    mob->lvl->keyboard_x = 0;
+    mob->lvl->keyboard_y = 0;
+
+    if (x != mob->x || y != mob->y) {
+        if (!(move_if_valid(mob->lvl, mob, x, y))) {
+            mob->emote = OUCH;
+        }
+    }
+}
+
+int random_walk_next_firing(void* vmob) {
+    return 3000;
+    float rate = 3000;
+    float r = ((float)rand()) / RAND_MAX;
+    int next_fire = (1 - powf(M_E, -rate*r)) * 1000;
+    if (next_fire < 1000) return 1000;
+    return next_fire;
+}
+
+void random_walk_fire(void* vmob) {
+    mobile *mob = (mobile*)vmob;
+    int x = mob->x;
+    int y = mob->y;
+
+    if (rand()%2 == 0) {
+        x += rand()%3 - 1;
+    } else {
+        y += rand()%3 - 1;
+    }
+
+    if (x != mob->x || y != mob->y) {
+        if (!(move_if_valid(mob->lvl, mob, x, y))) {
+            mob->emote = OUCH;
+        }
+    }
 }
