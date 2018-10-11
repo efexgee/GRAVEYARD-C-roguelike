@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-enum Behavior {RandomWalk, KeyboardInput, BeeLine, Stationary};
+enum Behavior {RandomWalk, KeyboardInput, BeeLine, Minotaur};
 
 typedef struct Item {
     char display;

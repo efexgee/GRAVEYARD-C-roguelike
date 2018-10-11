@@ -16,6 +16,8 @@ bool init_colors() {
     // Colors: black red green yellow blue magenta cyan white
     //
     // Matching these indices to the tput color indices
+    init_pair(DEFAULT, DEFAULT, DEFAULT);
+
     init_pair(BLACK, COLOR_BLACK, DEFAULT);
     init_pair(RED, COLOR_RED, DEFAULT);
     init_pair(GREEN, COLOR_GREEN, DEFAULT);

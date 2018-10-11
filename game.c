@@ -51,19 +51,25 @@ void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int b_y) {
     //fprintf(stderr, "[%s] xs %2d m %6.2f (%2d/%2d) ax %2d ay %2d bx %2d by %2d\n", "set_steps", *x_step, *slope, dy, dx, a_x, a_y, b_x, b_y);
 }
 
-void approach(level *lvl, mobile *actor, int *new_x, int *new_y, int target_x, int target_y) {
+bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
     // Takes one step towards the target position if possible
-    int x_step;
-    float slope;
-    float acc_err; // Doesn't actually get used :(
+    int closer_x = actor->x + (target_x < actor->x ? -1 : 1);
+    int closer_y = actor->y + (target_y < actor->y ? -1 : 1);
 
-    set_steps(&x_step, &slope, actor->x, actor->y, target_x, target_y);
+    fprintf(stderr, "At (%d,%d) and considering x=%d or y=%d\n", actor->x, actor->y, closer_x, closer_y);
 
-    // Pass x,y instead of actor?
-    *new_x = actor->x;
-    *new_y = actor->y;
-
-    next_square(new_x, new_y, x_step, slope, &acc_err);
+    // directions should be tried in random order
+    if (move_if_valid(lvl, actor, closer_x, actor->y)) {
+        fprintf(stderr, "Approached along x axis. %d == %d\n", actor->x, closer_x);
+        return true;
+    } else if (move_if_valid(lvl, actor, actor->x, closer_y)) {
+        fprintf(stderr, "Approached along y axis\n");
+        return true;
+    } else {
+        // optimize me, Mr. Compiler!
+        fprintf(stderr, "Can't approach\n");
+        return false;
+    }
 }
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
@@ -101,6 +107,8 @@ void draw_mobile(mobile *mob, int dx, int dy) {
         mob->emote = false;
     }
 
+    fprintf(stderr, "Draw me at (%d,%d)\n", mob->x, mob->y);
+
     mvprintw(dy+mob->y, dx+mob->x, "%c", display);
 }
 
@@ -121,7 +129,7 @@ void draw(level *lvl) {
                 // Borders are always visible
                 char display;
                 //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
-                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[yy][xx] == '+' ) {
+                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[yy][xx] != ' ' ) {
                     if (lvl->items[yy][xx] != NULL) {
                         display = lvl->items[yy][xx]->item->display;
                     } else {
@@ -133,21 +141,25 @@ void draw(level *lvl) {
                         }
                     }
                 } else {
+                    // should be using a constant here for the char to print
                     display = ' ';
                 }
                 mvprintw(y, x, "%c", display);
-                // this should be a general unsetter, not this
-                attroff(COLOR_PAIR(RED));
-                attron(A_NORMAL);
             } else {
+                // should be using a constant here for the char to print
                 mvprintw(y, x, "%c", ' ');
             }
+            // this should be a general unsetter, not this
+            attroff(COLOR_PAIR(RED));
+            // this does not work:
+            //attron(COLOR_PAIR(DEFAULT));
         }
     }
     for (int i=0; i < lvl->mob_count; i++) {
         if (lvl->mobs[i]->active) {
             mobile* mob = lvl->mobs[i];
             if (mob->y+dy > 0 && mob->y+dy <= row && mob->x+dx > 0 && mob->x+dx <= col) {
+                fprintf(stderr, "Drawing mob #%d\n", i);
                 draw_mobile(lvl->mobs[i], dx, dy);
             }
         }
@@ -229,6 +241,7 @@ int get_input(level *lvl) {
 void move_mobile(level *lvl, mobile *mob) {
     int x = mob->x;
     int y = mob->y;
+
     switch (mob->behavior) {
         case RandomWalk:
             if (rand()%2 == 0) {
@@ -243,18 +256,29 @@ void move_mobile(level *lvl, mobile *mob) {
             keyboard_x = 0;
             keyboard_y = 0;
             break;
-        case Stationary:
-            // approach() allows diagonal movement
+        case Minotaur:
             if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
                 print_message("You are spotted by a minotaur!");
+                // use pointers as aliases to make this less messy?
+                approach(lvl, mob, lvl->player->x, lvl->player->y);
+                fprintf(stderr, "I'm at (%d,%d) now\n", mob->x, mob->y);
                 mob->display = '>';
+                // approach() already did the move
+                // this ruins a lot of things
+                return;
             } else {
                 print_message("The minotaur can't find you.");
                 mob->display = ICON_MINOTAUR;
+                if (rand()%2 == 0) {
+                    x += rand()%3 - 1;
+                } else {
+                    y += rand()%3 - 1;
+                }
             }
             break;
     }
     if (x != mob->x || y != mob->y) {
+        fprintf(stderr, "This mob has moved\n");
         if (!(move_if_valid(lvl, mob, x, y))) {
             mob->emote = EMOTE_OUCH;
             if (rand()%100 > 95) {
@@ -316,7 +340,9 @@ int main() {
             // Be sure not to update the player again
             for (int i=0; i < lvl->mob_count - 1; i++) {
                 if (lvl->mobs[i]->active) {
+                    fprintf(stderr, "Moving mob #%d\n", i);
                     move_mobile(lvl, lvl->mobs[i]);
+                    fprintf(stderr, "Mob #%d at (%d,%d) now\n", i, lvl->mobs[i]->x, lvl->mobs[i]->y);
                 }
             }
             draw(lvl);

@@ -58,7 +58,7 @@ level* make_level(void) {
             lvl->mobs[i]->y = level_height / 2;
             lvl->mobs[i]->display = ICON_MINOTAUR;
             lvl->mobs[i]->name = malloc(sizeof(char)*9);
-            lvl->mobs[i]->behavior = Stationary;
+            lvl->mobs[i]->behavior = Minotaur;
             strcpy(lvl->mobs[i]->name, "minotaur");
             // only this mob
             break;
@@ -88,8 +88,8 @@ void destroy_level(level *lvl) {
 }
 
 int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
-    // disabled walls
-    if (w*h > 10*10 && rand()%100 < 0) {
+    // disabled partitioning
+    if (w*h > 10*10 && rand()%100 < 55) {
         int hw = w/2;
         int hh = h/2;
         int max_rm, new_rm;

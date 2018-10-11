@@ -10,8 +10,8 @@
 #define LVL_HEIGHT 40;
 
 #define WALL '#'
-#define FLOOR '.'
-#define OPEN_DOOR '-'
+#define FLOOR ' ' // floor is blank
+#define OPEN_DOOR ' ' // doors are blank
 #define CLOSED_DOOR '+'
 
 typedef struct Level {
