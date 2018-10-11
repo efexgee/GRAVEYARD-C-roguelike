@@ -6,6 +6,7 @@
 #include "level/level.h"
 #include "mob/mob.h"
 #include "los/los.h"
+#include "colors.h"
 
 int keyboard_x = 0, keyboard_y = 0;
 char message_banner[200];
@@ -126,6 +127,8 @@ void draw(level *lvl) {
                     } else {
                         display = lvl->tiles[yy][xx];
                         if (lvl->tiles[yy][xx] == '+') {
+                            attron(COLOR_PAIR(RED));
+                            // erase the + from the level; this is a hack
                             lvl->tiles[yy][xx] = ' ';
                         }
                     }
@@ -133,6 +136,9 @@ void draw(level *lvl) {
                     display = ' ';
                 }
                 mvprintw(y, x, "%c", display);
+                // this should be a general unsetter, not this
+                attroff(COLOR_PAIR(RED));
+                attron(A_NORMAL);
             } else {
                 mvprintw(y, x, "%c", ' ');
             }
@@ -282,6 +288,13 @@ int main() {
 
         srand(time(NULL));
         initscr();
+
+        if (! init_colors()) {
+            // would be nice to print terminal var here
+            fprintf(stderr, "Terminal does not support color.\n");
+            exit(1);
+        }
+
         raw();
         noecho();
         cbreak();
