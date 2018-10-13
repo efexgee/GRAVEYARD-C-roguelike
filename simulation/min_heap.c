@@ -3,92 +3,89 @@
 
 #include "min_heap.h"
 
-void swap(mheap *h, int i, int j) {
-    mheap_element old = h->e[i];
-    h->e[i] = h->e[j];
-    h->e[j] = old;
-}
-
 void upheap(mheap *h, int i) {
     if (i == 0) return;
 
     int parent = (i-1)/2;
+    mheap_element *p, *c;
+    p = (mheap_element*)vector_get(h, parent);
+    c = (mheap_element*)vector_get(h, i);
 
-    if (h->e[parent].value > h->e[i].value) {
-        swap(h, parent, i);
+    if (p->value > c->value) {
+        vector_swap(h, parent, i);
         upheap(h, parent);
     }
 }
 
 void mheap_push(mheap *h, void *data, int priority) {
-    if (h->capacity == h->length) {
-        if (h->e == NULL) {
-            h->e = malloc(100 * sizeof(mheap_element));
-            h->capacity = 100;
-        } else {
-            h->e = realloc(h->e, h->capacity*2 * sizeof(mheap_element));
-            if (h->e == NULL) exit(1);
-            h->capacity *= 2;
-        }
-    }
-
-    h->e[h->length].value = priority;
-    h->e[h->length].data = data;
-    upheap(h, h->length);
-
-    h->length++;
+    mheap_element e;
+    e.value = priority;
+    e.data = data;
+    vector_push(h, &e);
+    upheap(h, h->length - 1);
 }
 
 void print_heap(mheap *h) {
-    for (int i = 0; i < h->length; i++) printf("%d ", h->e[i]);
+    for (int i = 0; i < h->length; i++) {
+        int pri = ((mheap_element*)h->e + i)->value;
+        printf("%d ", pri);
+    }
     printf("\n");
 }
 
 void downheap(mheap *h, int i) {
     int child_left = i*2 + 1;
     int child_right = i*2 + 2;
-    int child = child_left;
+    int child;
     if (child_left >= h->length) return;
+
+    mheap_element *left, *right, *c, *parent;
+    left = (mheap_element*)vector_get(h, child_left);
+    parent = (mheap_element*)vector_get(h, i);
 
     if (child_right >= h->length) {
         child = child_left;
-    } else if (h->e[child_right].value < h->e[child_left].value) {
-        child = child_right;
+        c = left;
+    } else {
+        right = (mheap_element*)vector_get(h, child_right);
+        if (right->value <= left->value) {
+            child = child_right;
+            c = right;
+        } else {
+            child = child_left;
+            c = left;
+        }
     }
 
-    if (h->e[child].value < h->e[i].value) {
-        swap(h, child, i);
+    if (c->value < parent->value) {
+        vector_swap(h, child, i);
         downheap(h, child);
     }
 }
 
+void mheap_peek(mheap *h, void** data, int* priority) {
+    mheap_element *e = vector_get(h, 0);
+    *data = e->data;
+    *priority = e->value;
+}
+
 void mheap_pop(mheap *h, void** data, int* priority) {
-    *data = h->e[0].data;
-    *priority = h->e[0].value;
+    mheap_element* e = (mheap_element*)vector_get(h, 0);
+    *data = e->data;
+    *priority = e->value;
 
     h->length--;
 
     if (h->length > 0) {
-        h->e[0] = h->e[h->length];
+        vector_swap(h, 0, h->length);
         downheap(h, 0);
     }
 }
 
-void mheap_peek(mheap *h, void** data, int* priority) {
-    *data = h->e[0].data;
-    *priority = h->e[0].value;
-}
-
 void destroy_mheap(mheap *h) {
-    free((void*)h->e);
-    free((void*)h);
+    destroy_vector(h);
 }
 
 mheap* make_mheap() {
-    mheap *h = malloc(sizeof(mheap));
-    h->e = NULL;
-    h->length = 0;
-    h->capacity = 0;
-
-    return h;
+    return make_vector(sizeof(mheap_element));
 }

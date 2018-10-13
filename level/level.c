@@ -31,7 +31,7 @@ level* make_level(void) {
     lvl->width = level_width;
     lvl->height = level_height;
     lvl->keyboard_x = lvl->keyboard_y = 0;
-    lvl->mob_count = 101;
+    lvl->mob_count = 8;
     lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile*)));
     for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob(lvl);
     lvl->tiles = malloc(level_width * sizeof(unsigned char*));
@@ -70,6 +70,7 @@ level* make_level(void) {
     lvl->player->x = lvl->player->y = 1;
     lvl->sim->agents[lvl->mob_count-1].next_firing = every_turn_firing;
     lvl->sim->agents[lvl->mob_count-1].fire = player_move_fire;
+    lvl->sim->agents[lvl->mob_count-1].state = NULL;
     ((item*)lvl->player)->health = 10;
     ((item*)lvl->player)->display = ICON_HUMAN;
     ((item*)lvl->player)->name = malloc(sizeof(char)*9);
@@ -145,9 +146,7 @@ level* make_level(void) {
     }
     for (int i = 0; i < lvl->mob_count; i++) {
         lvl->sim->agents[i].state = (void*)lvl->mobs[i];
-        int next_firing = lvl->sim->agents[i].next_firing(&lvl->sim->agents[i].state);
-        mheap_push(lvl->sim->queue, &lvl->sim->agents[i], next_firing);
-
+        schedule_event(lvl->sim, &lvl->sim->agents[i], 0);
     }
 
     return lvl;

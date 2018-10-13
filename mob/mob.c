@@ -109,14 +109,14 @@ bool quaff(mobile* mob) {
     return false;
 }
 
-int never_next_firing(void* mob) {
+int never_next_firing(void* mob, enum sensory_events **invalidation_list) {
     return INT_MAX;
 }
 
 void dummy_fire(void* mob) {
 }
 
-int every_turn_firing(void* mob) {
+int every_turn_firing(void* mob, enum sensory_events **invalidation_list) {
     return TICKS_PER_TURN;
 }
 
@@ -134,7 +134,7 @@ void player_move_fire(void* vmob) {
     }
 }
 
-int random_walk_next_firing(void* vmob) {
+int random_walk_next_firing(void* vmob, enum sensory_events **invalidation_list) {
     float rate = 0.5;
     float r = ((float)rand()) / RAND_MAX;
     int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;

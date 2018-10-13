@@ -6,10 +6,10 @@
 int main(void)
 {
     int number_failed;
-    Suite *s;
     SRunner *sr;
 
     sr = srunner_create(make_mheap_suite());
+    srunner_add_suite(sr, make_vector_suite());
     srunner_add_suite(sr, make_simulation_suite());
     srunner_add_suite(sr, make_chemistry_suite());
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ncurses.h>
 
+#include "game.h"
 #include "level/level.h"
 #include "mob/mob.h"
 #include "simulation/simulation.h"
@@ -350,7 +351,7 @@ int main() {
             }
 
             turn++;
-            sync_simulation(lvl->sim, turn*1000);
+            sync_simulation(lvl->sim, turn*TICKS_PER_TURN);
 
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {

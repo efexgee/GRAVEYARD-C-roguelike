@@ -12,7 +12,7 @@ void simulation_setup(void) {
 void simulation_teardown(void) {
 };
 
-int mock_next_firing(void* st) {
+int mock_next_firing(void* st, enum sensory_events **ilist) {
     float rate = 1.0;
     float r = ((float)rand()) / RAND_MAX;
     return (1 - powf(M_E, -rate*r)) * 1000;
@@ -34,7 +34,8 @@ START_TEST(development_target) {
         sim.agents[i].next_firing = mock_next_firing;
         sim.agents[i].fire = mock_fire;
 
-        int next_firing = sim.agents[i].next_firing(&sim.agents[i].state);
+        enum sensory_events *ilist;
+        int next_firing = sim.agents[i].next_firing(&sim.agents[i].state, &ilist);
         mheap_push(sim.queue, &sim.agents[i], next_firing);
     }
 

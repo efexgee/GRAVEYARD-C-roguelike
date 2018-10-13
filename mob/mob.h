@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "../simulation/simulation.h"
 #include "../chemistry/chemistry.h"
 
 enum item_type {Weapon, Potion, Creature};
@@ -54,10 +55,10 @@ void destroy_item(item *itm);
 void rotate_inventory(mobile* mob);
 bool quaff(mobile* mob);
 
-int never_next_firing(void* mob);
+int never_next_firing(void* mob, enum sensory_events **invalidation_list);
 void dummy_fire(void* mob);
-int every_turn_firing(void* mob);
+int every_turn_firing(void* mob, enum sensory_events **invalidation_list);
 void player_move_fire(void* vmob);
-int random_walk_next_firing(void* mob);
+int random_walk_next_firing(void* mob, enum sensory_events **invalidation_list);
 void random_walk_fire(void* mob);
 #endif
