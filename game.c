@@ -52,24 +52,13 @@ void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int b_y) {
 }
 
 bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
-    // Takes one step towards the target position if possible
-    int closer_x = actor->x + (target_x < actor->x ? -1 : 1);
-    int closer_y = actor->y + (target_y < actor->y ? -1 : 1);
+    int new_x = actor->x;
+    int new_y = actor->y;
 
-    fprintf(stderr, "At (%d,%d) and considering x=%d or y=%d\n", actor->x, actor->y, closer_x, closer_y);
+    // TODO how to do bools?
+    step_towards(&new_x, &new_y, target_x, target_y, false);
 
-    // directions should be tried in random order
-    if (move_if_valid(lvl, actor, closer_x, actor->y)) {
-        fprintf(stderr, "Approached along x axis. %d == %d\n", actor->x, closer_x);
-        return true;
-    } else if (move_if_valid(lvl, actor, actor->x, closer_y)) {
-        fprintf(stderr, "Approached along y axis\n");
-        return true;
-    } else {
-        // optimize me, Mr. Compiler!
-        fprintf(stderr, "Can't approach\n");
-        return false;
-    }
+    return(move_if_valid(lvl, actor, new_x, new_y));
 }
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
@@ -107,7 +96,7 @@ void draw_mobile(mobile *mob, int dx, int dy) {
         mob->emote = false;
     }
 
-    fprintf(stderr, "Draw me at (%d,%d)\n", mob->x, mob->y);
+    //fprintf(stderr, "Draw me at (%d,%d)\n", mob->x, mob->y);
 
     mvprintw(dy+mob->y, dx+mob->x, "%c", display);
 }
@@ -159,7 +148,7 @@ void draw(level *lvl) {
         if (lvl->mobs[i]->active) {
             mobile* mob = lvl->mobs[i];
             if (mob->y+dy > 0 && mob->y+dy <= row && mob->x+dx > 0 && mob->x+dx <= col) {
-                fprintf(stderr, "Drawing mob #%d\n", i);
+                //fprintf(stderr, "Drawing mob #%d\n", i);
                 draw_mobile(lvl->mobs[i], dx, dy);
             }
         }

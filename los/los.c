@@ -1,8 +1,32 @@
 #include "los.h"
 #include <stdio.h>
+#include <math.h>
 
 #define TRUE 1
 #define FALSE 0
+
+void step_towards(int *x, int *y, int target_x, int target_y, int diagonal) {
+    int dx = target_x - *x;
+    int dy = target_y - *y;
+
+    if (abs(dx) > abs(dy)) {
+        // need to decrease x
+        *x += (*x < target_x ? 1 : -1);
+        fprintf(stderr, "%2d > %2d : (%2d,%2d)\n", dx, dy, *x, *y);
+    } else if (abs(dx) < abs(dy)) {
+        // need to decrease y
+        *y += (*y < target_y ? 1 : -1);
+        fprintf(stderr, "%2d < %2d : (%2d,%2d)\n", dx, dy, *x, *y);
+    } else if (rand() % 2 == 0) {
+        // pick at random
+        // TODO Sometimes mobs will bump into a wall when they don't need to
+        *x += (*x < target_x ? 1 : -1);
+        fprintf(stderr, "%2d == %2d (rnd) : (%2d,%2d)\n", dx, dy, *x, *y);
+    } else {
+        *y += (*y < target_y ? 1 : -1);
+        fprintf(stderr, "%2d == %2d (rnd) : (%2d,%2d)\n", dx, dy, *x, *y);
+    }
+}
 
 void update(int *stepper, int *bumper, float slope, int step, int bump, float *err) {
     // calculate where the next point should be
