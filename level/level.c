@@ -27,7 +27,7 @@ level* make_level(void) {
     for (int i = 1; i < level_width; i++)
         lvl->items[i] = lvl->items[0] + i * level_height;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
-        lvl->items[y][x] = NULL;
+        lvl->items[x][y] = NULL;
     }
 
     lvl->chemistry = malloc(level_width * sizeof(inventory_item**));
@@ -129,7 +129,7 @@ void destroy_level(level *lvl) {
     free((void *)lvl->items[0]);
     free((void *)lvl->items);
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
-        destroy_constituents(lvl->chemistry[y][x]);
+        destroy_constituents(lvl->chemistry[x][y]);
     }
     free((void *)lvl->chemistry[0]);
     free((void *)lvl->chemistry);

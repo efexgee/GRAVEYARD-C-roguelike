@@ -119,22 +119,22 @@ void draw(level *lvl) {
                 // Borders are always visible
                 char display;
                 //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
-                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[yy][xx] != ' ' ) {
+                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[xx][yy] != ' ' ) {
                     // Burning supercedes everything!
                     if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
                         display = BURNING;
                     } else {
                         // Draw items
-                        if (lvl->items[yy][xx] != NULL) {
-                            display = lvl->items[yy][xx]->item->display;
+                        if (lvl->items[xx][yy] != NULL) {
+                            display = lvl->items[xx][yy]->item->display;
                         } else {
                             // Draw the square
-                            display = lvl->tiles[yy][xx];
+                            display = lvl->tiles[xx][yy];
                             // HACK: Draw red pluses
-                            if (lvl->tiles[yy][xx] == '+') {
+                            if (lvl->tiles[xx][yy] == '+') {
                                 attron(COLOR_PAIR(RED));
                                 // HACK: Remove the plus because... hack
-                                lvl->tiles[yy][xx] = ' ';
+                                lvl->tiles[xx][yy] = ' ';
                             }
                         }
                     }
