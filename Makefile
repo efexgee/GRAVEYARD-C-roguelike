@@ -18,7 +18,7 @@ LDLIBS = -lcurses -lm
 all: depend game
 
 # this project contains multiple C files, which are dependent on header files that we find using makedepend, so header files  are not listed here
-SRCS  = game.c level/level.c level/level.h mob/mob.c mob/mob.h chemistry/chemistry.c chemistry/chemistry.h colors/colors.h colors/colors.c
+SRCS  = game.c level/level.c mob/mob.c chemistry/chemistry.c colors/colors.c
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
 # this target is dependent on all objects

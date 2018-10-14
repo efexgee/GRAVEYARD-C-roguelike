@@ -6,7 +6,7 @@
 #include "level/level.h"
 #include "mob/mob.h"
 #include "los/los.h"
-#include "colors.h"
+#include "colors/colors.h"
 
 int keyboard_x = 0, keyboard_y = 0;
 char message_banner[200];
