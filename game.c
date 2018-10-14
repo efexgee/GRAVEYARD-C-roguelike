@@ -455,13 +455,13 @@ void level_step_chemistry(level* lvl) {
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
         if (lvl->chem_sys->volitile[element]) {
-            int **added_element = malloc(lvl->height * sizeof(int*));
+            int **added_element = malloc(lvl->width * sizeof(int*));
             added_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
-            int **removed_element = malloc(lvl->height * sizeof(int*));
+            int **removed_element = malloc(lvl->width * sizeof(int*));
             removed_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
-            for(int i = 1; i < lvl->height; i++) {
-                added_element[i] = added_element[0] + i * lvl->width;
-                removed_element[i] = removed_element[0] + i * lvl->width;
+            for(int i = 1; i < lvl->width; i++) {
+                added_element[i] = added_element[0] + i * lvl->height;
+                removed_element[i] = removed_element[0] + i * lvl->height;
             }
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {

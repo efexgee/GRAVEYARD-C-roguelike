@@ -39,9 +39,7 @@ level* make_level(void) {
         lvl->chemistry[x][y]->elements[air] = 20;
     }
 
-
     lvl->chem_sys = make_default_chemical_system();
-
 
     partition(lvl);
 
@@ -166,10 +164,10 @@ int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
 }
 
 static void partition(level *lvl) {
-    int **partitioning = malloc(lvl->height * sizeof(int*));
-    for (int i = 0; i != lvl->height; i++) partitioning[i] = malloc(lvl->width*sizeof(int));
-    int **potential_doors= malloc(lvl->height * sizeof(int*));
-    for (int i = 0; i != lvl->height; i++) potential_doors[i] = malloc(lvl->width*sizeof(int));
+    int **partitioning = malloc(lvl->width * sizeof(int*));
+    for (int i = 0; i != lvl->width; i++) partitioning[i] = malloc(lvl->height*sizeof(int));
+    int **potential_doors= malloc(lvl->width * sizeof(int*));
+    for (int i = 0; i != lvl->width; i++) potential_doors[i] = malloc(lvl->height*sizeof(int));
 
     int rooms = rec_partition(partitioning, 0, 0, lvl->width, lvl->height, 0);
 
