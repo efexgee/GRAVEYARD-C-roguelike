@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "../mob/mob.h"
+#include "../chemistry/chemistry.h"
 
 #define LVL_WIDTH 80;
 #define LVL_HEIGHT 40;
@@ -13,10 +14,13 @@
 #define FLOOR ' ' // floor is blank
 #define OPEN_DOOR ' ' // doors are blank
 #define CLOSED_DOOR '+'
+#define BURNING '*'
 
 typedef struct Level {
     unsigned char **tiles;
     inventory_item ***items;
+    constituents ***chemistry;
+    chemical_system *chem_sys;
     int width;
     int height;
     mobile **mobs;

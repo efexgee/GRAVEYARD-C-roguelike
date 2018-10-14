@@ -1,4 +1,6 @@
 a.out
+*.h.gch
 *~
+test_suite
 game
 *.o

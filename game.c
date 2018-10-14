@@ -18,12 +18,12 @@ bool is_position_valid(level *lvl, int x, int y) {
     } else if (y >= lvl->height || y < 0) {
         fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "y is out of bounds", y);
         return false;
-    } else if (lvl->tiles[y][x] == WALL) {
+    } else if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) {
         // from a performance standpoint, this should be the first test
         return false;
     } else {
         for (int i=0; i < lvl->mob_count; i++) {
-            if (!lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
+            if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
                 return false;
             }
         }
@@ -89,7 +89,7 @@ bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
 }
 
 void draw_mobile(mobile *mob, int dx, int dy) {
-    char display = mob->display;
+    char display = ((item*)mob)->display;
 
     if (mob->emote) {
         display = mob->emote;
@@ -109,6 +109,7 @@ void draw(level *lvl) {
     int dx = col/2 - lvl->player->x;
     int dy = row/2 - lvl->player->y;
 
+    // declarations inside loops?
     for (int x = 0; x < col; x++) {
         for (int y = 0; y < row; y++) {
             int xx = x - dx;
@@ -119,14 +120,22 @@ void draw(level *lvl) {
                 char display;
                 //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
                 if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[yy][xx] != ' ' ) {
-                    if (lvl->items[yy][xx] != NULL) {
-                        display = lvl->items[yy][xx]->item->display;
+                    // Burning supercedes everything!
+                    if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
+                        display = BURNING;
                     } else {
-                        display = lvl->tiles[yy][xx];
-                        if (lvl->tiles[yy][xx] == '+') {
-                            attron(COLOR_PAIR(RED));
-                            // erase the + from the level; this is a hack
-                            lvl->tiles[yy][xx] = ' ';
+                        // Draw items
+                        if (lvl->items[yy][xx] != NULL) {
+                            display = lvl->items[yy][xx]->item->display;
+                        } else {
+                            // Draw the square
+                            display = lvl->tiles[yy][xx];
+                            // HACK: Draw red pluses
+                            if (lvl->tiles[yy][xx] == '+') {
+                                attron(COLOR_PAIR(RED));
+                                // HACK: Remove the plus because... hack
+                                lvl->tiles[yy][xx] = ' ';
+                            }
                         }
                     }
                 } else {
@@ -187,13 +196,55 @@ void pickup_item(level *lvl, mobile *mob) {
     }
 }
 
+void smash(level *lvl, mobile *mob) {
+    item *potion = ((item*)mob)->contents->item;
+    add_constituents(lvl->chemistry[mob->x][mob->y], potion->chemistry);
+    inventory_item *inv = ((item*)mob)->contents;
+    ((item*)mob)->contents = inv->next;
+    free((void*)inv);
+    destroy_item(potion);
+}
+
+void print_location_elements(level *lvl, mobile *mob) {
+    char *message = malloc(sizeof(char)*200);
+    constituents *chem = lvl->chemistry[mob->x][mob->y];
+    snprintf(message, 200, "wood: %d air: %d fire: %d", chem->elements[wood], chem->elements[air], chem->elements[fire]);
+    print_message(message);
+    free((void*)message);
+}
+
+void toggle_door(level *lvl, mobile *mob) {
+    int x = mob->x;
+    int y = mob->y;
+    switch (getch()) {
+        case KEY_UP:
+            y -= 1;
+            break;
+        case KEY_DOWN:
+            y += 1;
+            break;
+        case KEY_RIGHT:
+            x += 1;
+            break;
+        case KEY_LEFT:
+            x -= 1;
+            break;
+        default:
+            return;
+    }
+    if (lvl->tiles[x][y] == OPEN_DOOR) {
+        lvl->tiles[x][y] = CLOSED_DOOR;
+    } else if (lvl->tiles[x][y] == CLOSED_DOOR) {
+        lvl->tiles[x][y] = OPEN_DOOR;
+    }
+}
+
 int get_input(level *lvl) {
     char *inventory;
     char *message = malloc(sizeof(char)*200);
     int input = getch();
     int return_code = 0;
 
-    print_message("");
 
     switch (input) {
         case KEY_UP:
@@ -220,7 +271,47 @@ int get_input(level *lvl) {
         case '.':
             pickup_item(lvl, lvl->player);
             break;
+        case 'r':
+            rotate_inventory(lvl->player);
+            inventory = inventory_string(lvl->player, 200);
+            snprintf(message, 200, "Your inventory contains: %s", inventory);
+            print_message(message);
+            free((void*)inventory);
+            break;
         case 'q':
+            if(quaff(lvl->player)) {
+                print_message("You drink a potion.");
+            } else {
+                print_message("That isn't a potion.");
+            }
+            break;
+        case 'v':
+            if (((item*)lvl->player)->contents != NULL && ((item*)lvl->player)->contents->item->type == Potion) {
+                smash(lvl, lvl->player);
+                print_message("You smash the potion on the floor.");
+            } else print_message("That isn't a potion.");
+            break;
+        case 'e':
+            if (((item*)lvl->player)->contents != NULL) {
+                snprintf(message, 200, "wood: %d fire: %d ash: %d",
+                        ((item*)lvl->player)->contents->item->chemistry->elements[wood],
+                        ((item*)lvl->player)->contents->item->chemistry->elements[fire],
+                        ((item*)lvl->player)->contents->item->chemistry->elements[ash]
+                        );
+                print_message(message);
+            }
+            break;
+        case 's':
+            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", ((item*)lvl->player)->health, ((item*)lvl->player)->chemistry->elements[venom], ((item*)lvl->player)->chemistry->elements[banz], ((item*)lvl->player)->chemistry->elements[life]);
+            print_message(message);
+            break;
+        case 't':
+            print_location_elements(lvl, lvl->player);
+            break;
+        case 'o':
+            toggle_door(lvl, lvl->player);
+            break;
+        case 'Q':
             return_code = -1;
     }
     free((void*)message);
@@ -251,13 +342,17 @@ void move_mobile(level *lvl, mobile *mob) {
                 // use pointers as aliases to make this less messy?
                 approach(lvl, mob, lvl->player->x, lvl->player->y);
                 fprintf(stderr, "I'm at (%d,%d) now\n", mob->x, mob->y);
-                mob->display = '>';
+
+                // Horrible speudo-inheritance syntax
+                ((item*) mob)->display = '>';
+                // mob->base->display = '>';
+
                 // approach() already did the move
                 // this ruins a lot of things
                 return;
             } else {
                 print_message("The minotaur can't find you.");
-                mob->display = ICON_MINOTAUR;
+                ((item*)mob)->display = ICON_MINOTAUR;
                 if (rand()%2 == 0) {
                     x += rand()%3 - 1;
                 } else {
@@ -287,12 +382,128 @@ void move_mobile(level *lvl, mobile *mob) {
                         break;
                 }
                 char *full_msg = malloc(sizeof(char)*200);
-                snprintf(full_msg, 200, "You hear the %s say \"%s\"", mob->name, msg);
+                snprintf(full_msg, 200, "You hear the %s say \"%s\"", ((item*)mob)->name, msg);
                 print_message(full_msg);
                 free(full_msg);
             }
         }
     }
+}
+
+void step_chemistry(chemical_system *sys, constituents *chem, constituents *context) {
+    for (int i = 0; i < 3; i++) {
+        bool is_stable = chem->stable;
+        if (context != NULL) is_stable = is_stable && context->stable;
+        if (!is_stable) {
+            react(sys, chem, context);
+        }
+    }
+}
+
+void step_inventory_chemistry(chemical_system *sys, inventory_item *inv, constituents *context) {
+    while (inv != NULL) {
+        step_chemistry(sys, inv->item->chemistry, context);
+        inv = inv->next;
+    }
+}
+
+void step_item(level *lvl, item *itm, constituents *chem_ctx) {
+    step_chemistry(lvl->chem_sys, itm->chemistry, chem_ctx);
+    step_inventory_chemistry(lvl->chem_sys, itm->contents, itm->chemistry);
+    bool burning = itm->chemistry->elements[fire] > 0;
+    if (chem_ctx != NULL) burning = burning || chem_ctx->elements[fire] > 0;
+    if (burning && itm->health > 0) itm->health -= 1;
+}
+
+void step_mobile(level *lvl, mobile *mob) {
+    constituents *chemistry = ((item*)mob)->chemistry;
+    move_mobile(lvl, mob);
+    if (lvl->chemistry[mob->x][mob->y]->elements[air] > 5) {
+        lvl->chemistry[mob->x][mob->y]->elements[air] -= 5;
+    } else {
+        ((item*)mob)->health -= 1;
+    }
+    if (chemistry->elements[life] > 0) {
+        chemistry->elements[life] -= 10;
+        ((item*)mob)->health += 1;
+    }
+    if (chemistry->elements[venom] > 0) {
+        chemistry->elements[venom] -= 10;
+        ((item*)mob)->health -= 1;
+    }
+    step_item(lvl, (item*)mob, lvl->chemistry[mob->x][mob->y]);
+    if (((item*)mob)->health <= 0) {
+        mob->active = false;
+    }
+}
+
+void level_step_chemistry(level* lvl) {
+    for (int x = 0; x < lvl->width; x++) {
+        for (int y = 0; y < lvl->height; y++) {
+            step_chemistry(lvl->chem_sys, lvl->chemistry[x][y], NULL);
+            inventory_item *inv = lvl->items[x][y];
+            while (inv != NULL) {
+                step_item(lvl, inv->item, lvl->chemistry[x][y]);
+                if (inv->item->health <= 0) {
+                    inv->item->name = "Ashy Remnants";
+                    inv->item->display = '~';
+                }
+                inv = inv->next;
+            }
+            if (lvl->tiles[x][y] != WALL && lvl->tiles[x][y] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[air] < 20) lvl->chemistry[x][y]->elements[air] += 3;
+        }
+    }
+    for (int element = 0; element < ELEMENT_COUNT; element++) {
+        if (lvl->chem_sys->volitile[element]) {
+            int **added_element = malloc(lvl->height * sizeof(int*));
+            added_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
+            int **removed_element = malloc(lvl->height * sizeof(int*));
+            removed_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
+            for(int i = 1; i < lvl->height; i++) {
+                added_element[i] = added_element[0] + i * lvl->width;
+                removed_element[i] = removed_element[0] + i * lvl->width;
+            }
+            for (int x = 0; x < lvl->width; x++) {
+                for (int y = 0; y < lvl->height; y++) {
+                    added_element[x][y] = 0;
+                    removed_element[x][y] = 0;
+                }
+            }
+
+            for (int x = 0; x < lvl->width; x++) {
+                for (int y = 0; y < lvl->height; y++) {
+                    int rx = rand();
+                    int ry = rand();
+                    for (int dx = 0; dx < 2; dx++) {
+                        int xx = x + (((dx+rx)%3)-1);
+                        for (int dy = 0; dy < 2; dy++) {
+                            int yy = y + (((dy+ry)%3)-1);
+                            if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
+                                if (lvl->tiles[xx][yy] != WALL && lvl->tiles[xx][yy] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[element] - removed_element[x][y] > lvl->chemistry[xx][yy]->elements[element] + added_element[xx][yy]) {
+                                    removed_element[x][y] += 1;
+                                    added_element[xx][yy] += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            for (int x = 0; x < lvl->width; x++) {
+                for (int y = 0; y < lvl->height; y++) {
+                    if (added_element[x][y] > 0 || removed_element[x][y] > 0) {
+                        lvl->chemistry[x][y]->elements[element] += added_element[x][y] - removed_element[x][y];
+                        lvl->chemistry[x][y]->stable = false;
+                    }
+                }
+            }
+            free((void*)added_element[0]);
+            free((void*)added_element);
+            free((void*)removed_element[0]);
+            free((void*)removed_element);
+        }
+    }
+
+
 }
 
 int main() {
@@ -319,22 +530,47 @@ int main() {
         draw(lvl);
 
         int turn = 0;
+
+        // Main Loop
         do {
             fprintf(stderr, "=== Turn %3d ============================================\n", turn++);
 
-            // Need to update the player before all other actors
-            // so they interact with where he is drawn, not where
-            // he was when the update loop started
+            // Update the player before any of the mobs so they
+            // react to the position where the player will be drawn
             move_mobile(lvl, lvl->mobs[lvl->mob_count - 1]);
-            // Be sure not to update the player again
+
+            // Update all mobs other than the player
             for (int i=0; i < lvl->mob_count - 1; i++) {
                 if (lvl->mobs[i]->active) {
                     fprintf(stderr, "Moving mob #%d\n", i);
                     move_mobile(lvl, lvl->mobs[i]);
+                    step_mobile(lvl, lvl->mobs[i]);
                     fprintf(stderr, "Mob #%d at (%d,%d) now\n", i, lvl->mobs[i]->x, lvl->mobs[i]->y);
+
                 }
+
             }
+
+            // Update chemistry model
+            level_step_chemistry(lvl);
+
+            // Prep death message if player is dead
+            if (!lvl->player->active) {
+                print_message("You die");
+            }
+
+            // Update the screen
             draw(lvl);
+
+            // If the player is dead, wait for input
+            if (!lvl->player->active) {
+                getch();
+                break;
+            }
+
+            // Reset message
+            print_message("");
+
         } while (get_input(lvl) == 0);
 
         destroy_level(lvl);

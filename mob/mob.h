@@ -1,13 +1,23 @@
 #ifndef INC_MOB_H
 #define INC_MOB_H
+
 #include <stdbool.h>
 #include <stdlib.h>
 
-enum Behavior {RandomWalk, KeyboardInput, BeeLine, Minotaur};
+#include "../chemistry/chemistry.h"
 
-typedef struct Item {
+enum Behavior {RandomWalk, KeyboardInput, BeeLine, Minotaur};
+enum item_type {Weapon, Potion, Creature};
+
+struct InventoryItem;
+
+typedef struct {
     char display;
     char *name;
+    constituents *chemistry;
+    struct InventoryItem *contents;
+    int health;
+    enum item_type type;
 } item;
 
 typedef struct InventoryItem {
@@ -16,15 +26,13 @@ typedef struct InventoryItem {
 } inventory_item;
 
 typedef struct Mobile {
-    char display;
-    char *name;
+    item base;
     int x;
     int y;
     bool active;
     bool stacks;
     enum Behavior behavior;
     char emote;
-    inventory_item *inventory;
 } mobile;
 
 #define ICON_HUMAN '@'
@@ -40,4 +48,8 @@ void destroy_mob(mobile *mob);
 void push_inventory(mobile* mob, item* itm);
 item* pop_inventory(mobile* mob);
 char* inventory_string(mobile* mob, int len);
+void destroy_item(item *itm);
+
+void rotate_inventory(mobile* mob);
+bool quaff(mobile* mob);
 #endif
