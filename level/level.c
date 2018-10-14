@@ -6,7 +6,6 @@
 
 static void partition(level *lvl);
 
-
 level* make_level(void) {
     level *lvl = malloc(sizeof *lvl);
     int level_width = LVL_WIDTH;

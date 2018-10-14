@@ -77,7 +77,7 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
 
         if (!(is_position_valid(lvl, a_x, a_y))) return false;
 
-        lvl->tiles[a_y][a_x] = '+';
+        lvl->tiles[a_x][a_y] = '+';
     }
 }
 
