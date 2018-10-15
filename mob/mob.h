@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "../simulation/simulation.h"
+#include "../simulation/vector.h"
 #include "../chemistry/chemistry.h"
 
 enum item_type {Weapon, Potion, Creature};
@@ -19,6 +20,7 @@ typedef struct {
     struct InventoryItem *contents;
     int health;
     enum item_type type;
+    struct event_listener listeners[SENSORY_EVENT_COUNT];
 } item;
 
 typedef struct InventoryItem {
@@ -55,10 +57,12 @@ void destroy_item(item *itm);
 void rotate_inventory(mobile* mob);
 bool quaff(mobile* mob);
 
-int never_next_firing(void* mob, enum sensory_events **invalidation_list);
+void item_deal_damage(struct Level *lvl, item* itm, unsigned int amount);
+
+int never_next_firing(void* mob, struct event_listener *listeners);
 void dummy_fire(void* mob);
-int every_turn_firing(void* mob, enum sensory_events **invalidation_list);
+int every_turn_firing(void* mob, struct event_listener *listeners);
 void player_move_fire(void* vmob);
-int random_walk_next_firing(void* mob, enum sensory_events **invalidation_list);
+int random_walk_next_firing(void* mob, struct event_listener *listeners);
 void random_walk_fire(void* mob);
 #endif

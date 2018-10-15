@@ -48,7 +48,7 @@ void downheap(mheap *h, int i) {
         c = left;
     } else {
         right = (mheap_element*)vector_get(h, child_right);
-        if (right->value <= left->value) {
+        if (right->value < left->value) {
             child = child_right;
             c = right;
         } else {
@@ -87,5 +87,5 @@ void destroy_mheap(mheap *h) {
 }
 
 mheap* make_mheap() {
-    return make_vector(sizeof(mheap_element));
+    return make_vector(sizeof(int)+sizeof(mheap_element));
 }

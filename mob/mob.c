@@ -12,6 +12,7 @@ mobile* make_mob(struct Level *lvl) {
     ((item*)mob)->chemistry = make_constituents();
     ((item*)mob)->type = Creature;
     mob->state = NULL;
+    for (int i = 0; i < SENSORY_EVENT_COUNT; i++) ((item*)mob)->listeners[i].handler = NULL;
     mob->lvl = lvl;
     mob->x = 0;
     mob->y = 0;
@@ -109,14 +110,14 @@ bool quaff(mobile* mob) {
     return false;
 }
 
-int never_next_firing(void* mob, enum sensory_events **invalidation_list) {
+int never_next_firing(void* mob, struct event_listener *listeners) {
     return INT_MAX;
 }
 
 void dummy_fire(void* mob) {
 }
 
-int every_turn_firing(void* mob, enum sensory_events **invalidation_list) {
+int every_turn_firing(void* mob, struct event_listener *listeners) {
     return TICKS_PER_TURN;
 }
 
@@ -134,7 +135,7 @@ void player_move_fire(void* vmob) {
     }
 }
 
-int random_walk_next_firing(void* vmob, enum sensory_events **invalidation_list) {
+int random_walk_next_firing(void* vmob, struct event_listener *listeners) {
     float rate = 0.5;
     float r = ((float)rand()) / RAND_MAX;
     int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
@@ -157,5 +158,12 @@ void random_walk_fire(void* vmob) {
         if (!(move_if_valid(mob->lvl, mob, x, y))) {
             mob->emote = OUCH;
         }
+    }
+}
+
+void item_deal_damage(level* lvl, item* itm, unsigned int amount) {
+    itm->health -= amount;
+    if (itm->listeners[DAMAGE].handler != NULL) {
+        simulation_call_event_handler(lvl->sim  , &itm->listeners[DAMAGE]);
     }
 }

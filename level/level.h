@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "../game.h"
 #include "../mob/mob.h"
 #include "../chemistry/chemistry.h"
 #include "../simulation/simulation.h"

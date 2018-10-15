@@ -234,7 +234,7 @@ void step_item(level *lvl, item *itm, constituents *chem_ctx) {
     step_inventory_chemistry(lvl->chem_sys, itm->contents, itm->chemistry);
     bool burning = itm->chemistry->elements[fire] > 0;
     if (chem_ctx != NULL) burning = burning || chem_ctx->elements[fire] > 0;
-    if (burning && itm->health > 0) itm->health -= 1;
+    if (burning && itm->health > 0) item_deal_damage(lvl, itm, 1);
 }
 
 void step_mobile(level *lvl, mobile *mob) {
@@ -242,7 +242,7 @@ void step_mobile(level *lvl, mobile *mob) {
     if (lvl->chemistry[mob->x][mob->y]->elements[air] > 5) {
         lvl->chemistry[mob->x][mob->y]->elements[air] -= 5;
     } else {
-        ((item*)mob)->health -= 1;
+        item_deal_damage(lvl, ((item*)mob), 1);
     }
     if (chemistry->elements[life] > 0) {
         chemistry->elements[life] -= 10;
@@ -250,7 +250,7 @@ void step_mobile(level *lvl, mobile *mob) {
     }
     if (chemistry->elements[venom] > 0) {
         chemistry->elements[venom] -= 10;
-        ((item*)mob)->health -= 1;
+        item_deal_damage(lvl, ((item*)mob), 1);
     }
     step_item(lvl, (item*)mob, lvl->chemistry[mob->x][mob->y]);
     if (((item*)mob)->health <= 0) {
@@ -276,13 +276,13 @@ void level_step_chemistry(level* lvl) {
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
         if (lvl->chem_sys->volitile[element]) {
-            int **added_element = malloc(lvl->height * sizeof(int*));
+            int **added_element = malloc(lvl->width * sizeof(int*));
             added_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
-            int **removed_element = malloc(lvl->height * sizeof(int*));
+            int **removed_element = malloc(lvl->width * sizeof(int*));
             removed_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
-            for(int i = 1; i < lvl->height; i++) {
-                added_element[i] = added_element[0] + i * lvl->width;
-                removed_element[i] = removed_element[0] + i * lvl->width;
+            for(int i = 1; i < lvl->width; i++) {
+                added_element[i] = added_element[0] + i * lvl->height;
+                removed_element[i] = removed_element[0] + i * lvl->height;
             }
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {

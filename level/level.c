@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
+#include <math.h>
 
 #include "level.h"
 #include "../mob/mob.h"
@@ -8,7 +10,7 @@ void partition(level *lvl);
 
 void umber_hulk_fire(void* vmob) {
     mobile *mob = (mobile*)vmob;
-if (rand()/(float)RAND_MAX > 0.8) {
+    if (rand()/(float)RAND_MAX > 0.8) {
         if (*(bool*)mob->state) {
             *(bool*)mob->state = false;
             mob->base.display = ICON_UMBER_HULK_ASLEEP;
@@ -23,9 +25,30 @@ if (rand()/(float)RAND_MAX > 0.8) {
     }
 }
 
+bool umber_hulk_invalidation(void *vmob) {
+    mobile *mob = (mobile*)vmob;
+    *(bool*)mob->state = true;
+    mob->base.display = ICON_UMBER_HULK_AWAKE;
+    return true;
+}
+
+int umber_hulk_next_firing(void* vmob, struct event_listener *listeners) {
+    mobile *mob = (mobile*)vmob;
+    if (*(bool*)mob->state) {
+        float rate = 0.5;
+        float r = ((float)rand()) / RAND_MAX;
+        int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
+        if (next_fire < TICKS_PER_TURN) return TICKS_PER_TURN;
+        return next_fire;
+    } else {
+        listeners[DAMAGE].handler = umber_hulk_invalidation;
+        return INT_MAX;
+    }
+}
+
 level* make_level(void) {
     level *lvl = malloc(sizeof *lvl);
-    int level_width = 50;
+    int level_width = 40;
     int level_height = 50;
 
     lvl->width = level_width;
@@ -44,7 +67,7 @@ level* make_level(void) {
     for (int i = 1; i < level_width; i++)
         lvl->items[i] = lvl->items[0] + i * level_height;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
-        lvl->items[y][x] = NULL;
+        lvl->items[x][y] = NULL;
     }
 
     lvl->chemistry = malloc(level_width * sizeof(inventory_item**));
@@ -59,18 +82,20 @@ level* make_level(void) {
 
     lvl->chem_sys = make_default_chemical_system();
 
-    lvl->sim = malloc(sizeof(struct simulation));
-    lvl->sim->num_agents = lvl->mob_count;
-    lvl->sim->agents = malloc(lvl->sim->num_agents*sizeof(struct agent));
-    lvl->sim->queue = make_mheap();
+    lvl->sim = make_simulation();
 
     partition(lvl);
 
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
-    lvl->sim->agents[lvl->mob_count-1].next_firing = every_turn_firing;
-    lvl->sim->agents[lvl->mob_count-1].fire = player_move_fire;
-    lvl->sim->agents[lvl->mob_count-1].state = NULL;
+    struct agent a;
+
+    a.next_firing = every_turn_firing;
+    a.fire = player_move_fire;
+    a.state = (void*)lvl->player;
+    a.listeners = ((item*)lvl->player)->listeners;
+    simulation_push_agent(lvl->sim, &a);
+
     ((item*)lvl->player)->health = 10;
     ((item*)lvl->player)->display = ICON_HUMAN;
     ((item*)lvl->player)->name = malloc(sizeof(char)*9);
@@ -118,35 +143,44 @@ level* make_level(void) {
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
         lvl->mobs[i]->active = true;
 
-        switch (rand()%3) {
+        switch (3) {//rand()%3) {
             case 0:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
                 lvl->mobs[i]->stacks = true;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
-                lvl->sim->agents[i].next_firing = random_walk_next_firing;
-                lvl->sim->agents[i].fire = random_walk_fire;
+                a.next_firing = random_walk_next_firing;
+                a.fire = random_walk_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "goblin");
                 break;
             case 1:
                 ((item*)lvl->mobs[i])->display = ICON_ORC;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
-                lvl->sim->agents[i].next_firing = random_walk_next_firing;
-                lvl->sim->agents[i].fire = random_walk_fire;
+                a.next_firing = random_walk_next_firing;
+                a.fire = random_walk_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "orc");
                 break;
             default:
                 ((item*)lvl->mobs[i])->display = ICON_UMBER_HULK_AWAKE;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+                ((item*)lvl->mobs[i])->health = 30;
                 lvl->mobs[i]->state = malloc(sizeof(bool));
-                *(bool*)lvl->mobs[i]->state = false;
-                lvl->sim->agents[i].next_firing = random_walk_next_firing;
-                lvl->sim->agents[i].fire = umber_hulk_fire;
+                *(bool*)lvl->mobs[i]->state = true;
+                a.next_firing = umber_hulk_next_firing;
+                a.fire = umber_hulk_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "umber hulk");
         }
     }
     for (int i = 0; i < lvl->mob_count; i++) {
-        lvl->sim->agents[i].state = (void*)lvl->mobs[i];
-        schedule_event(lvl->sim, &lvl->sim->agents[i], 0);
+        schedule_event(lvl->sim, (struct agent*)vector_get(lvl->sim->agents, i), 0);
     }
 
     return lvl;
@@ -158,13 +192,14 @@ void destroy_level(level *lvl) {
     free((void *)lvl->items[0]);
     free((void *)lvl->items);
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
-        destroy_constituents(lvl->chemistry[y][x]);
+        destroy_constituents(lvl->chemistry[x][y]);
     }
     free((void *)lvl->chemistry[0]);
     free((void *)lvl->chemistry);
     destroy_chemical_system(lvl->chem_sys);
     for (int i = 0; i < lvl->mob_count; i++) destroy_mob(lvl->mobs[i]);
     free((void *)lvl->mobs);
+    destroy_simulation(lvl->sim);
     free((void *)lvl);
 }
 
