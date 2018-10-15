@@ -143,7 +143,7 @@ level* make_level(void) {
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
         lvl->mobs[i]->active = true;
 
-        switch (3) {//rand()%3) {
+        switch (rand()%3) {
             case 0:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
                 lvl->mobs[i]->stacks = true;
