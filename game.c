@@ -77,7 +77,8 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
 
         if (!(is_position_valid(lvl, a_x, a_y))) return false;
 
-        lvl->tiles[a_x][a_y] = '+';
+        // lvl->tiles[a_x][a_y] = '+';
+        //fprintf(stderr, "Placed a '+' at (%2d, %2d)\n", a_x, a_y);
     }
 }
 
@@ -118,7 +119,7 @@ void draw(level *lvl) {
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
                 // Borders are always visible
                 char display;
-                //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy)) {
+                //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy) || lvl->tiles[xx][yy] == '+') {
                 if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[xx][yy] != ' ' ) {
                     // Burning supercedes everything!
                     if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
@@ -132,6 +133,7 @@ void draw(level *lvl) {
                             display = lvl->tiles[xx][yy];
                             // HACK: Draw red pluses
                             if (lvl->tiles[xx][yy] == '+') {
+                                //fprintf(stderr, "Prepped a '+' to be drawn at (%2d, %2d)\n", xx, yy);
                                 attron(COLOR_PAIR(RED));
                                 // HACK: Remove the plus because... hack
                                 lvl->tiles[xx][yy] = ' ';
@@ -140,7 +142,11 @@ void draw(level *lvl) {
                     }
                 } else {
                     // should be using a constant here for the char to print
-                    display = ' ';
+                    if (can_see(lvl, lvl->player, xx, yy)) {
+                        display = '.';
+                    } else {
+                        display = ' ';
+                    }
                 }
                 mvprintw(y, x, "%c", display);
             } else {
@@ -341,7 +347,7 @@ void move_mobile(level *lvl, mobile *mob) {
                 print_message("You are spotted by a minotaur!");
                 // use pointers as aliases to make this less messy?
                 approach(lvl, mob, lvl->player->x, lvl->player->y);
-                fprintf(stderr, "I'm at (%d,%d) now\n", mob->x, mob->y);
+                //fprintf(stderr, "I'm at (%d,%d) now\n", mob->x, mob->y);
 
                 // Horrible speudo-inheritance syntax
                 ((item*) mob)->display = '>';
@@ -362,7 +368,7 @@ void move_mobile(level *lvl, mobile *mob) {
             break;
     }
     if (x != mob->x || y != mob->y) {
-        fprintf(stderr, "This mob has moved\n");
+        //fprintf(stderr, "%s's (x,y) has changed: (%2d,%2d)\n", ((item*)mob)->name, mob->x, mob->y);
         if (!(move_if_valid(lvl, mob, x, y))) {
             mob->emote = EMOTE_OUCH;
             if (rand()%100 > 95) {
@@ -542,10 +548,9 @@ int main() {
             // Update all mobs other than the player
             for (int i=0; i < lvl->mob_count - 1; i++) {
                 if (lvl->mobs[i]->active) {
-                    fprintf(stderr, "Moving mob #%d\n", i);
-                    move_mobile(lvl, lvl->mobs[i]);
+                    //fprintf(stderr, "Moving mob #%d - %s\n", i, ((item*)lvl->mobs[i])->name);
                     step_mobile(lvl, lvl->mobs[i]);
-                    fprintf(stderr, "Mob #%d at (%d,%d) now\n", i, lvl->mobs[i]->x, lvl->mobs[i]->y);
+                    //fprintf(stderr, "Mob #%d at (%d,%d) now\n", i, lvl->mobs[i]->x, lvl->mobs[i]->y);
 
                 }
 
