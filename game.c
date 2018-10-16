@@ -22,8 +22,6 @@ void draw_mobile(mobile *mob, int dx, int dy) {
         mob->emote = false;
     }
 
-    //fprintf(stderr, "Draw me at (%d,%d)\n", mob->x, mob->y);
-
     mvprintw(dy+mob->y, dx+mob->x, "%c", display);
 }
 
@@ -35,20 +33,18 @@ void draw(level *lvl) {
     int dx = col/2 - lvl->player->x;
     int dy = row/2 - lvl->player->y;
 
-    // declarations inside loops?
     for (int x = 0; x < col; x++) {
         for (int y = 0; y < row; y++) {
             int xx = x - dx;
             int yy = y - dy;
+            char display = UNSEEN;
             // Positions which are part of the map
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
-                // Borders are always visible
-                char display;
-                //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy) || lvl->tiles[xx][yy] == '+') {
-                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[xx][yy] != ' ' ) {
+                if (can_see(lvl, lvl->player, xx, yy)) {
                     // Burning supercedes everything!
                     if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
                         display = BURNING;
+                        attron(COLOR_PAIR(RED));
                     } else {
                         // Draw items
                         if (lvl->items[xx][yy] != NULL) {
@@ -56,39 +52,26 @@ void draw(level *lvl) {
                         } else {
                             // Draw the square
                             display = lvl->tiles[xx][yy];
-                            // HACK: Draw red pluses
-                            if (lvl->tiles[xx][yy] == '+') {
-                                //fprintf(stderr, "Prepped a '+' to be drawn at (%2d, %2d)\n", xx, yy);
-                                attron(COLOR_PAIR(RED));
-                                // HACK: Remove the plus because... hack
-                                lvl->tiles[xx][yy] = ' ';
-                            }
                         }
                     }
-                } else {
-                    // should be using a constant here for the char to print
-                    if (can_see(lvl, lvl->player, xx, yy)) {
-                        display = '.';
-                    } else {
-                        display = ' ';
-                    }
                 }
-                mvprintw(y, x, "%c", display);
-            } else {
-                // should be using a constant here for the char to print
-                mvprintw(y, x, "%c", ' ');
+                if (display == UNSEEN) {
+                    display = lvl->memory[xx][yy];
+                    attron(COLOR_PAIR(YELLOW));
+                } else {
+                    lvl->memory[xx][yy] = display;
+                }
             }
+            mvprintw(y, x, "%c", display);
             // this should be a general unsetter, not this
+            attroff(COLOR_PAIR(YELLOW));
             attroff(COLOR_PAIR(RED));
-            // this does not work:
-            //attron(COLOR_PAIR(DEFAULT));
         }
     }
     for (int i=0; i < lvl->mob_count; i++) {
-        if (lvl->mobs[i]->active) {
+        if (lvl->mobs[i]->active && can_see(lvl, lvl->player, lvl->mobs[i]->x, lvl->mobs[i]->y)) {
             mobile* mob = lvl->mobs[i];
             if (mob->y+dy > 0 && mob->y+dy <= row && mob->x+dx > 0 && mob->x+dx <= col) {
-                //fprintf(stderr, "Drawing mob #%d\n", i);
                 draw_mobile(lvl->mobs[i], dx, dy);
             }
         }
@@ -396,12 +379,8 @@ int main() {
 
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {
-                    //fprintf(stderr, "Moving mob #%d - %s\n", i, ((item*)lvl->mobs[i])->name);
                     step_mobile(lvl, lvl->mobs[i]);
-                    //fprintf(stderr, "Mob #%d at (%d,%d) now\n", i, lvl->mobs[i]->x, lvl->mobs[i]->y);
-
                 }
-
             }
 
             // Update chemistry model

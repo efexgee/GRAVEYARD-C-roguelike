@@ -83,6 +83,11 @@ level* make_level(void) {
     for (int i = 1; i < level_width; i++)
         lvl->tiles[i] = lvl->tiles[0] + i * level_height;
 
+    lvl->memory = malloc(level_width * sizeof(unsigned char*));
+    lvl->memory[0] = malloc(level_height * level_width * sizeof(unsigned char));
+    for (int i = 1; i < level_width; i++)
+        lvl->memory[i] = lvl->memory[0] + i * level_height;
+
     lvl->items = malloc(level_width * sizeof(inventory_item**));
     lvl->items[0] = malloc(level_height * level_width * sizeof(inventory_item*));
     for (int i = 1; i < level_width; i++)
@@ -96,6 +101,7 @@ level* make_level(void) {
     for(int i = 1; i < level_width; i++)
         lvl->chemistry[i] = lvl->chemistry[0] + i * level_height;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        lvl->memory[x][y] = UNSEEN;
         lvl->chemistry[x][y] = make_constituents();
         lvl->chemistry[x][y]->elements[air] = 20;
     }
@@ -221,6 +227,8 @@ level* make_level(void) {
 void destroy_level(level *lvl) {
     free((void *)lvl->tiles[0]);
     free((void *)lvl->tiles);
+    free((void *)lvl->memory[0]);
+    free((void *)lvl->memory);
     free((void *)lvl->items[0]);
     free((void *)lvl->items);
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
@@ -394,8 +402,6 @@ static void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int 
 
     *slope = (float) dy / dx;
     *x_step = dx < 0 ? -1 : 1;
-
-    //fprintf(stderr, "[%s] xs %2d m %6.2f (%2d/%2d) ax %2d ay %2d bx %2d by %2d\n", "set_steps", *x_step, *slope, dy, dx, a_x, a_y, b_x, b_y);
 }
 
 bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
@@ -406,16 +412,12 @@ bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
 
     set_steps(&x_step, &slope, a_x, a_y, b_x, b_y);
 
-    //while (!(a_x == b_x && a_y == b_y)) {
     while (true) {
         next_square(&a_x, &a_y, x_step, slope, &acc_err);
 
         if (a_x == b_x && a_y == b_y) return true;
 
         if (!(is_position_valid(lvl, a_x, a_y))) return false;
-
-        // lvl->tiles[a_x][a_y] = '+';
-        //fprintf(stderr, "Placed a '+' at (%2d, %2d)\n", a_x, a_y);
     }
 }
 
@@ -423,5 +425,5 @@ bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
     // This is between a thing and a position
     // It just wraps line_of_sight for easier English reading
     // Making a thing-to-thing function seems too specific
-    return (line_of_sight(lvl, actor->x, actor->y, target_x, target_y));
+    return line_of_sight(lvl, actor->x, actor->y, target_x, target_y);
 }

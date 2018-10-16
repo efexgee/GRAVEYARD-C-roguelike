@@ -14,13 +14,15 @@
 #define LVL_HEIGHT 40;
 
 #define WALL '#'
-#define FLOOR ' ' // floor is blank
-#define OPEN_DOOR ' ' // doors are blank
+#define FLOOR '.'
+#define UNSEEN ' '
+#define OPEN_DOOR '-' // doors are blank
 #define CLOSED_DOOR '+'
 #define BURNING '*'
 
 typedef struct Level {
     unsigned char **tiles;
+    unsigned char **memory;
     inventory_item ***items;
     constituents ***chemistry;
     chemical_system *chem_sys;
