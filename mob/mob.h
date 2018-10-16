@@ -62,10 +62,10 @@ bool quaff(mobile* mob);
 
 void item_deal_damage(struct Level *lvl, item* itm, unsigned int amount);
 
-int never_next_firing(void* mob, struct event_listener *listeners);
-void dummy_fire(void* mob);
-int every_turn_firing(void* mob, struct event_listener *listeners);
-void player_move_fire(void* vmob);
-int random_walk_next_firing(void* mob, struct event_listener *listeners);
-void random_walk_fire(void* mob);
+int never_next_firing(void *context, void* mob, struct event_listener *listeners);
+void dummy_fire(void *context, void* mob);
+int every_turn_firing(void *context, void* mob, struct event_listener *listeners);
+void player_move_fire(void *context, void* vmob);
+int random_walk_next_firing(void *context, void* mob, struct event_listener *listeners);
+void random_walk_fire(void *context, void* mob);
 #endif

@@ -27,19 +27,20 @@ struct event_listener {
 
 struct agent {
     void *state;
-    int (*next_firing)(void *, struct event_listener *listeners);
-    void (*fire)(void *);
+    int (*next_firing)(void *context, void *agent, struct event_listener *listeners);
+    void (*fire)(void *context, void *agent);
     struct event_listener *listeners;
 };
 
 
 struct simulation {
     vector *agents;
+    void *context;
     mheap *queue;
     int current_clock;
 };
 
-struct simulation* make_simulation(void);
+struct simulation* make_simulation(void* context);
 void destroy_simulation(struct simulation *sim);
 
 void simulation_call_event_handler(struct simulation *sim, struct event_listener *listener);

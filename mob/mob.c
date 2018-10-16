@@ -110,18 +110,18 @@ bool quaff(mobile* mob) {
     return false;
 }
 
-int never_next_firing(void* mob, struct event_listener *listeners) {
+int never_next_firing(void *context, void* mob, struct event_listener *listeners) {
     return INT_MAX;
 }
 
-void dummy_fire(void* mob) {
+void dummy_fire(void *context, void* mob) {
 }
 
-int every_turn_firing(void* mob, struct event_listener *listeners) {
+int every_turn_firing(void *context, void* mob, struct event_listener *listeners) {
     return TICKS_PER_TURN;
 }
 
-void player_move_fire(void* vmob) {
+void player_move_fire(void *context, void* vmob) {
     mobile *mob = (mobile*)vmob;
     int x = mob->x + mob->lvl->keyboard_x;
     int y = mob->y + mob->lvl->keyboard_y;
@@ -135,7 +135,7 @@ void player_move_fire(void* vmob) {
     }
 }
 
-int random_walk_next_firing(void* vmob, struct event_listener *listeners) {
+int random_walk_next_firing(void *context, void* vmob, struct event_listener *listeners) {
     float rate = 0.5;
     float r = ((float)rand()) / RAND_MAX;
     int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
@@ -143,7 +143,7 @@ int random_walk_next_firing(void* vmob, struct event_listener *listeners) {
     return next_fire;
 }
 
-void random_walk_fire(void* vmob) {
+void random_walk_fire(void *context, void* vmob) {
     mobile *mob = (mobile*)vmob;
     int x = mob->x;
     int y = mob->y;

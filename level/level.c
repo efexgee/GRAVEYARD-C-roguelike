@@ -16,18 +16,18 @@ static bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
 }
 
 
-void minotaur_fire(void* vmob) {
+void minotaur_fire(void *context, void* vmob) {
     mobile *mob = (mobile*)vmob;
-    level *lvl = (level*)mob->state;
+    level *lvl = (level*)context;
     if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
         approach(lvl, mob, lvl->player->x, lvl->player->y);
         ((item*) mob)->display = '>';
     } else {
-        random_walk_fire(vmob);
+        random_walk_fire(context, vmob);
     }
 }
 
-void umber_hulk_fire(void* vmob) {
+void umber_hulk_fire(void *context, void* vmob) {
     mobile *mob = (mobile*)vmob;
     if (rand()/(float)RAND_MAX > 0.8) {
         if (*(bool*)mob->state) {
@@ -40,7 +40,7 @@ void umber_hulk_fire(void* vmob) {
     }
 
     if (*(bool*)mob->state) {
-        random_walk_fire(vmob);
+        random_walk_fire(context, vmob);
     }
 }
 
@@ -51,7 +51,7 @@ bool umber_hulk_invalidation(void *vmob) {
     return true;
 }
 
-int umber_hulk_next_firing(void* vmob, struct event_listener *listeners) {
+int umber_hulk_next_firing(void *context, void* vmob, struct event_listener *listeners) {
     mobile *mob = (mobile*)vmob;
     if (*(bool*)mob->state) {
         float rate = 0.5;
@@ -108,7 +108,7 @@ level* make_level(void) {
 
     lvl->chem_sys = make_default_chemical_system();
 
-    lvl->sim = make_simulation();
+    lvl->sim = make_simulation((void*)lvl);
 
     partition(lvl);
 
@@ -207,7 +207,6 @@ level* make_level(void) {
             default:
                 ((item*)lvl->mobs[i])->display = ICON_MINOTAUR;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*9);
-                lvl->mobs[i]->state = (void*)lvl;
                 a.next_firing = random_walk_next_firing;
                 a.fire = minotaur_fire;
                 a.state = (void*)lvl->mobs[i];
