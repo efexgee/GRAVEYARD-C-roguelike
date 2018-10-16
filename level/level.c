@@ -1,8 +1,69 @@
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
+#include <math.h>
 
 #include "level.h"
 #include "../mob/mob.h"
+
+static bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
+    int new_x = actor->x;
+    int new_y = actor->y;
+
+    step_towards(&new_x, &new_y, target_x, target_y, false);
+
+    return(move_if_valid(lvl, actor, new_x, new_y));
+}
+
+
+void minotaur_fire(void *context, void* vmob) {
+    mobile *mob = (mobile*)vmob;
+    level *lvl = (level*)context;
+    if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
+        approach(lvl, mob, lvl->player->x, lvl->player->y);
+        ((item*) mob)->display = '>';
+    } else {
+        random_walk_fire(context, vmob);
+    }
+}
+
+void umber_hulk_fire(void *context, void* vmob) {
+    mobile *mob = (mobile*)vmob;
+    if (rand()/(float)RAND_MAX > 0.8) {
+        if (*(bool*)mob->state) {
+            *(bool*)mob->state = false;
+            mob->base.display = ICON_UMBER_HULK_ASLEEP;
+        } else {
+            *(bool*)mob->state = true;
+            mob->base.display = ICON_UMBER_HULK_AWAKE;
+        }
+    }
+
+    if (*(bool*)mob->state) {
+        random_walk_fire(context, vmob);
+    }
+}
+
+bool umber_hulk_invalidation(void *vmob) {
+    mobile *mob = (mobile*)vmob;
+    *(bool*)mob->state = true;
+    mob->base.display = ICON_UMBER_HULK_AWAKE;
+    return true;
+}
+
+int umber_hulk_next_firing(void *context, void* vmob, struct event_listener *listeners) {
+    mobile *mob = (mobile*)vmob;
+    if (*(bool*)mob->state) {
+        float rate = 0.5;
+        float r = ((float)rand()) / RAND_MAX;
+        int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
+        if (next_fire < TICKS_PER_TURN) return TICKS_PER_TURN;
+        return next_fire;
+    } else {
+        listeners[DAMAGE].handler = umber_hulk_invalidation;
+        return INT_MAX;
+    }
+}
 
 static void partition(level *lvl);
 
@@ -13,13 +74,19 @@ level* make_level(void) {
 
     lvl->width = level_width;
     lvl->height = level_height;
-    lvl->mob_count = 101;
+    lvl->keyboard_x = lvl->keyboard_y = 0;
+    lvl->mob_count = 8;
     lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile*)));
-    for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob();
+    for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob(lvl);
     lvl->tiles = malloc(level_width * sizeof(unsigned char*));
     lvl->tiles[0] = malloc(level_height * level_width * sizeof(unsigned char));
     for (int i = 1; i < level_width; i++)
         lvl->tiles[i] = lvl->tiles[0] + i * level_height;
+
+    lvl->memory = malloc(level_width * sizeof(unsigned char*));
+    lvl->memory[0] = malloc(level_height * level_width * sizeof(unsigned char));
+    for (int i = 1; i < level_width; i++)
+        lvl->memory[i] = lvl->memory[0] + i * level_height;
 
     lvl->items = malloc(level_width * sizeof(inventory_item**));
     lvl->items[0] = malloc(level_height * level_width * sizeof(inventory_item*));
@@ -34,17 +101,27 @@ level* make_level(void) {
     for(int i = 1; i < level_width; i++)
         lvl->chemistry[i] = lvl->chemistry[0] + i * level_height;
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
+        lvl->memory[x][y] = UNSEEN;
         lvl->chemistry[x][y] = make_constituents();
         lvl->chemistry[x][y]->elements[air] = 20;
     }
 
     lvl->chem_sys = make_default_chemical_system();
 
+    lvl->sim = make_simulation((void*)lvl);
+
     partition(lvl);
 
     lvl->player = lvl->mobs[lvl->mob_count-1];
     lvl->player->x = lvl->player->y = 1;
-    lvl->player->behavior = KeyboardInput;
+    struct agent a;
+
+    a.next_firing = every_turn_firing;
+    a.fire = player_move_fire;
+    a.state = (void*)lvl->player;
+    a.listeners = ((item*)lvl->player)->listeners;
+    simulation_push_agent(lvl->sim, &a);
+
     ((item*)lvl->player)->health = 10;
     ((item*)lvl->player)->display = ICON_HUMAN;
     ((item*)lvl->player)->name = malloc(sizeof(char)*9);
@@ -90,31 +167,57 @@ level* make_level(void) {
     for (int i=0; i < lvl->mob_count-1; i++) {
         lvl->mobs[i]->x = rand()%(level_width-2) + 1;
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
-        lvl->mobs[i]->behavior = RandomWalk;
         lvl->mobs[i]->active = true;
 
-        // hard-coded test mob
-        if (i == 0) {
-            lvl->mobs[i]->x = level_width / 2;
-            lvl->mobs[i]->y = level_height / 2;
-            ((item*)lvl->mobs[i])->display = ICON_MINOTAUR;
-            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*9);
-            lvl->mobs[i]->behavior = Minotaur;
-            strcpy(((item*)lvl->mobs[i])->name, "minotaur");
-            // only this mob
-            break;
+        switch (rand()%4) {
+            case 0:
+                ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
+                lvl->mobs[i]->stacks = true;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
+                a.next_firing = random_walk_next_firing;
+                a.fire = random_walk_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
+                strcpy(((item*)lvl->mobs[i])->name, "goblin");
+                break;
+            case 1:
+                ((item*)lvl->mobs[i])->display = ICON_ORC;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+                a.next_firing = random_walk_next_firing;
+                a.fire = random_walk_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
+                strcpy(((item*)lvl->mobs[i])->name, "orc");
+                break;
+            case 2:
+                ((item*)lvl->mobs[i])->display = ICON_UMBER_HULK_AWAKE;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
+                ((item*)lvl->mobs[i])->health = 30;
+                lvl->mobs[i]->state = malloc(sizeof(bool));
+                *(bool*)lvl->mobs[i]->state = true;
+                a.next_firing = umber_hulk_next_firing;
+                a.fire = umber_hulk_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
+                strcpy(((item*)lvl->mobs[i])->name, "umber hulk");
+                break;
+            default:
+                ((item*)lvl->mobs[i])->display = ICON_MINOTAUR;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*9);
+                a.next_firing = random_walk_next_firing;
+                a.fire = minotaur_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
+                strcpy(((item*)lvl->mobs[i])->name, "minotaur");
+                break;
         }
-
-        if (rand()%2 == 0) {
-            ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
-            lvl->mobs[i]->stacks = true;
-            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
-            strcpy(((item*)lvl->mobs[i])->name, "goblin");
-        } else {
-            ((item*)lvl->mobs[i])->display = ICON_ORC;
-            ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
-            strcpy(((item*)lvl->mobs[i])->name, "orc");
-        }
+    }
+    for (int i = 0; i < lvl->mob_count; i++) {
+        schedule_event(lvl->sim, (struct agent*)vector_get(lvl->sim->agents, i), 0);
     }
 
     return lvl;
@@ -123,6 +226,8 @@ level* make_level(void) {
 void destroy_level(level *lvl) {
     free((void *)lvl->tiles[0]);
     free((void *)lvl->tiles);
+    free((void *)lvl->memory[0]);
+    free((void *)lvl->memory);
     free((void *)lvl->items[0]);
     free((void *)lvl->items);
     for (int x = 0; x < lvl->width; x++) for (int y = 0; y < lvl->height; y++) {
@@ -133,6 +238,7 @@ void destroy_level(level *lvl) {
     destroy_chemical_system(lvl->chem_sys);
     for (int i = 0; i < lvl->mob_count; i++) destroy_mob(lvl->mobs[i]);
     free((void *)lvl->mobs);
+    destroy_simulation(lvl->sim);
     free((void *)lvl);
 }
 
@@ -257,4 +363,66 @@ item* level_pop_item(level *lvl, int x, int y) {
         free(old);
         return itm;
     }
+}
+
+bool is_position_valid(level *lvl, int x, int y) {
+    if (x >= lvl->width || x < 0) {
+        fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "x is out of bounds", x);
+        return false;
+    } else if (y >= lvl->height || y < 0) {
+        fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "y is out of bounds", y);
+        return false;
+    } else if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) {
+        // from a performance standpoint, this should be the first test
+        return false;
+    } else {
+        for (int i=0; i < lvl->mob_count; i++) {
+            if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
+    if (is_position_valid(lvl, x, y)) {
+        mob->x = x;
+        mob->y = y;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+static void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int b_y) {
+    int dx = b_x - a_x;
+    int dy = b_y - a_y;
+
+    *slope = (float) dy / dx;
+    *x_step = dx < 0 ? -1 : 1;
+}
+
+bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
+    // This is between two positions, theoretically non-directional
+    int x_step;
+    float slope;
+    float acc_err = 0;
+
+    set_steps(&x_step, &slope, a_x, a_y, b_x, b_y);
+
+    while (true) {
+        next_square(&a_x, &a_y, x_step, slope, &acc_err);
+
+        if (a_x == b_x && a_y == b_y) return true;
+
+        if (!(is_position_valid(lvl, a_x, a_y))) return false;
+    }
+}
+
+bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
+    // This is between a thing and a position
+    // It just wraps line_of_sight for easier English reading
+    // Making a thing-to-thing function seems too specific
+    return line_of_sight(lvl, actor->x, actor->y, target_x, target_y);
 }

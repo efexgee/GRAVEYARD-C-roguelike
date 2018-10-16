@@ -100,7 +100,6 @@ void react(chemical_system *sys, constituents *input, constituents *context) {
 
 bool apply_reaction(reaction *re, constituents *input, constituents *ctx) {
     if (reaction_possible(re, input, ctx)) {
-        constituents result;
         for (int i=0; i < ELEMENT_COUNT; i++) {
             int needed = re->input.elements[i];
             float proportion_from_input = 1.0;

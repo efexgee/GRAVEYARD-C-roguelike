@@ -2,5 +2,7 @@ a.out
 *.h.gch
 *~
 test_suite
+.gdb_history
+Makefile.bak
 game
 *.o

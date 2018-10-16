@@ -2,11 +2,13 @@
 #include <stdbool.h>
 #include <check.h>
 
+#include "../check_check.h"
+
 #include "../../chemistry/chemistry.h"
 
 chemical_system *sys;
 
-void setup(void) {
+void chemistry_setup(void) {
     sys = make_chemical_system(3);
 
     for (int j = 0; j < 3; j++ ) {
@@ -27,7 +29,7 @@ void setup(void) {
     sys->reactions[2].output.elements[wood] = 10;
 };
 
-void teardown(void) {
+void chemistry_teardown(void) {
     destroy_chemical_system(sys);
 };
 
@@ -93,7 +95,7 @@ START_TEST(test_react) {
     destroy_constituents(thing);
 } END_TEST
 
-Suite * chemistry_suite(void)
+Suite * make_chemistry_suite(void)
 {
     Suite *s;
     TCase *tc_core;
@@ -103,25 +105,10 @@ Suite * chemistry_suite(void)
     /* Core test case */
     tc_core = tcase_create("Core");
 
-    tcase_add_checked_fixture(tc_core, setup, teardown);
+    tcase_add_checked_fixture(tc_core, chemistry_setup, chemistry_teardown);
     tcase_add_test(tc_core, test_apply_reaction);
     tcase_add_test(tc_core, test_react);
     suite_add_tcase(s, tc_core);
 
     return s;
-}
-
-int main(void)
-{
-    int number_failed;
-    Suite *s;
-    SRunner *sr;
-
-    s = chemistry_suite();
-    sr = srunner_create(s);
-
-    srunner_run_all(sr, CK_NORMAL);
-    number_failed = srunner_ntests_failed(sr);
-    srunner_free(sr);
-    return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
