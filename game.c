@@ -1,12 +1,16 @@
 #include <time.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <string.h>
 
 #include "game.h"
 #include "level/level.h"
 #include "mob/mob.h"
 #include "simulation/simulation.h"
+#include "los/los.h"
+#include "colors/colors.h"
 
+int keyboard_x = 0, keyboard_y = 0;
 char message_banner[200];
 
 
@@ -17,6 +21,8 @@ void draw_mobile(mobile *mob, int dx, int dy) {
         display = mob->emote;
         mob->emote = false;
     }
+
+    //fprintf(stderr, "Draw me at (%d,%d)\n", mob->x, mob->y);
 
     mvprintw(dy+mob->y, dx+mob->x, "%c", display);
 }
@@ -29,29 +35,60 @@ void draw(level *lvl) {
     int dx = col/2 - lvl->player->x;
     int dy = row/2 - lvl->player->y;
 
+    // declarations inside loops?
     for (int x = 0; x < col; x++) {
         for (int y = 0; y < row; y++) {
             int xx = x - dx;
             int yy = y - dy;
+            // Positions which are part of the map
             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
+                // Borders are always visible
                 char display;
-                if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
-                    display = BURNING;
-                } else if (lvl->items[xx][yy] != NULL) {
-                    display = lvl->items[xx][yy]->item->display;
+                //if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || can_see(lvl, lvl->player, xx, yy) || lvl->tiles[xx][yy] == '+') {
+                if ( xx == 0 || yy == 0 || xx == lvl->width - 1 || yy == lvl->height -1 || lvl->tiles[xx][yy] != ' ' ) {
+                    // Burning supercedes everything!
+                    if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
+                        display = BURNING;
+                    } else {
+                        // Draw items
+                        if (lvl->items[xx][yy] != NULL) {
+                            display = lvl->items[xx][yy]->item->display;
+                        } else {
+                            // Draw the square
+                            display = lvl->tiles[xx][yy];
+                            // HACK: Draw red pluses
+                            if (lvl->tiles[xx][yy] == '+') {
+                                //fprintf(stderr, "Prepped a '+' to be drawn at (%2d, %2d)\n", xx, yy);
+                                attron(COLOR_PAIR(RED));
+                                // HACK: Remove the plus because... hack
+                                lvl->tiles[xx][yy] = ' ';
+                            }
+                        }
+                    }
                 } else {
-                    display = lvl->tiles[xx][yy];
+                    // should be using a constant here for the char to print
+                    if (can_see(lvl, lvl->player, xx, yy)) {
+                        display = '.';
+                    } else {
+                        display = ' ';
+                    }
                 }
                 mvprintw(y, x, "%c", display);
             } else {
-                mvprintw(y, x, " ");
+                // should be using a constant here for the char to print
+                mvprintw(y, x, "%c", ' ');
             }
+            // this should be a general unsetter, not this
+            attroff(COLOR_PAIR(RED));
+            // this does not work:
+            //attron(COLOR_PAIR(DEFAULT));
         }
     }
     for (int i=0; i < lvl->mob_count; i++) {
         if (lvl->mobs[i]->active) {
             mobile* mob = lvl->mobs[i];
             if (mob->y+dy > 0 && mob->y+dy <= row && mob->x+dx > 0 && mob->x+dx <= col) {
+                //fprintf(stderr, "Drawing mob #%d\n", i);
                 draw_mobile(lvl->mobs[i], dx, dy);
             }
         }
@@ -63,7 +100,7 @@ void draw(level *lvl) {
 }
 
 void print_message(char *msg) {
-    snprintf(message_banner, 200, msg);
+    strncpy(message_banner, msg, 200);
 }
 
 void drop_item(level *lvl, mobile *mob) {
@@ -334,6 +371,13 @@ int main() {
 
         srand(time(NULL));
         initscr();
+
+        if (! init_colors()) {
+            // would be nice to print terminal var here
+            fprintf(stderr, "Terminal does not support color.\n");
+            exit(1);
+        }
+
         raw();
         noecho();
         cbreak();
@@ -343,27 +387,43 @@ int main() {
 
         lvl = make_level();
         draw(lvl);
+
+        // Main Loop
         do {
-
-            if (!lvl->player->active) {
-                getch();
-                break;
-            }
-
+            fprintf(stderr, "=== Turn %3d ============================================\n", turn++);
             turn++;
             sync_simulation(lvl->sim, turn*TICKS_PER_TURN);
 
             for (int i=0; i < lvl->mob_count; i++) {
                 if (lvl->mobs[i]->active) {
+                    //fprintf(stderr, "Moving mob #%d - %s\n", i, ((item*)lvl->mobs[i])->name);
                     step_mobile(lvl, lvl->mobs[i]);
+                    //fprintf(stderr, "Mob #%d at (%d,%d) now\n", i, lvl->mobs[i]->x, lvl->mobs[i]->y);
+
                 }
+
             }
+
+            // Update chemistry model
             level_step_chemistry(lvl);
+
+            // Prep death message if player is dead
             if (!lvl->player->active) {
                 print_message("You die");
             }
+
+            // Update the screen
             draw(lvl);
+
+            // If the player is dead, wait for input
+            if (!lvl->player->active) {
+                getch();
+                break;
+            }
+
+            // Reset message
             print_message("");
+
         } while (get_input(lvl) == 0);
 
         destroy_level(lvl);

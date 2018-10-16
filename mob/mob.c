@@ -130,7 +130,7 @@ void player_move_fire(void* vmob) {
 
     if (x != mob->x || y != mob->y) {
         if (!(move_if_valid(mob->lvl, mob, x, y))) {
-            mob->emote = OUCH;
+            mob->emote = EMOTE_OUCH;
         }
     }
 }
@@ -156,7 +156,7 @@ void random_walk_fire(void* vmob) {
 
     if (x != mob->x || y != mob->y) {
         if (!(move_if_valid(mob->lvl, mob, x, y))) {
-            mob->emote = OUCH;
+            mob->emote = EMOTE_OUCH;
         }
     }
 }

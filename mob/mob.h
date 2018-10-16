@@ -1,5 +1,6 @@
 #ifndef INC_MOB_H
 #define INC_MOB_H
+
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -44,8 +45,10 @@ typedef struct Mobile {
 #define ICON_ORC 'O'
 #define ICON_UMBER_HULK_AWAKE 'U'
 #define ICON_UMBER_HULK_ASLEEP 'z'
+#define ICON_MINOTAUR 'M'
 
-#define OUCH '!'
+#define EMOTE_OUCH '!'
+#define EMOTE_ANGRY '%'
 
 mobile* make_mob();
 void destroy_mob(mobile *mob);

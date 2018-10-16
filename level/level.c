@@ -6,7 +6,26 @@
 #include "level.h"
 #include "../mob/mob.h"
 
-void partition(level *lvl);
+static bool approach(level *lvl, mobile *actor, int target_x, int target_y) {
+    int new_x = actor->x;
+    int new_y = actor->y;
+
+    step_towards(&new_x, &new_y, target_x, target_y, false);
+
+    return(move_if_valid(lvl, actor, new_x, new_y));
+}
+
+
+void minotaur_fire(void* vmob) {
+    mobile *mob = (mobile*)vmob;
+    level *lvl = (level*)mob->state;
+    if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
+        approach(lvl, mob, lvl->player->x, lvl->player->y);
+        ((item*) mob)->display = '>';
+    } else {
+        random_walk_fire(vmob);
+    }
+}
 
 void umber_hulk_fire(void* vmob) {
     mobile *mob = (mobile*)vmob;
@@ -46,10 +65,12 @@ int umber_hulk_next_firing(void* vmob, struct event_listener *listeners) {
     }
 }
 
+static void partition(level *lvl);
+
 level* make_level(void) {
     level *lvl = malloc(sizeof *lvl);
-    int level_width = 40;
-    int level_height = 50;
+    int level_width = LVL_WIDTH;
+    int level_height = LVL_HEIGHT;
 
     lvl->width = level_width;
     lvl->height = level_height;
@@ -78,7 +99,6 @@ level* make_level(void) {
         lvl->chemistry[x][y] = make_constituents();
         lvl->chemistry[x][y]->elements[air] = 20;
     }
-
 
     lvl->chem_sys = make_default_chemical_system();
 
@@ -143,7 +163,7 @@ level* make_level(void) {
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
         lvl->mobs[i]->active = true;
 
-        switch (rand()%3) {
+        switch (rand()%4) {
             case 0:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
                 lvl->mobs[i]->stacks = true;
@@ -165,7 +185,7 @@ level* make_level(void) {
                 simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "orc");
                 break;
-            default:
+            case 2:
                 ((item*)lvl->mobs[i])->display = ICON_UMBER_HULK_AWAKE;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
                 ((item*)lvl->mobs[i])->health = 30;
@@ -177,6 +197,18 @@ level* make_level(void) {
                 a.listeners = ((item*)lvl->mobs[i])->listeners;
                 simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "umber hulk");
+                break;
+            default:
+                ((item*)lvl->mobs[i])->display = ICON_MINOTAUR;
+                ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*9);
+                lvl->mobs[i]->state = (void*)lvl;
+                a.next_firing = random_walk_next_firing;
+                a.fire = minotaur_fire;
+                a.state = (void*)lvl->mobs[i];
+                a.listeners = ((item*)lvl->mobs[i])->listeners;
+                simulation_push_agent(lvl->sim, &a);
+                strcpy(((item*)lvl->mobs[i])->name, "minotaur");
+                break;
         }
     }
     for (int i = 0; i < lvl->mob_count; i++) {
@@ -204,7 +236,8 @@ void destroy_level(level *lvl) {
 }
 
 int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
-    if (w*h > 10*10 && rand()%100 < 50) {
+    // disabled partitioning
+    if (w*h > 10*10 && rand()%100 < 55) {
         int hw = w/2;
         int hh = h/2;
         int max_rm, new_rm;
@@ -228,11 +261,11 @@ int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
     }
 }
 
-void partition(level *lvl) {
-    int **partitioning = malloc(lvl->width * sizeof (int*));
-    for (int i = 0 ; i != lvl->width; i++) partitioning[i] = malloc(lvl->height*sizeof(int));
-    int **potential_doors= malloc(lvl->width * sizeof (int*));
-    for (int i = 0 ; i != lvl->width; i++) potential_doors[i] = malloc(lvl->height*sizeof(int));
+static void partition(level *lvl) {
+    int **partitioning = malloc(lvl->width * sizeof(int*));
+    for (int i = 0; i != lvl->width; i++) partitioning[i] = malloc(lvl->height*sizeof(int));
+    int **potential_doors= malloc(lvl->width * sizeof(int*));
+    for (int i = 0; i != lvl->width; i++) potential_doors[i] = malloc(lvl->height*sizeof(int));
 
     int rooms = rec_partition(partitioning, 0, 0, lvl->width, lvl->height, 0);
 
@@ -294,7 +327,6 @@ void partition(level *lvl) {
         }
     }
 
-
     free((void *)partitioning[0]);
     free((void *)partitioning);
     free((void *)potential_doors[0]);
@@ -327,8 +359,16 @@ item* level_pop_item(level *lvl, int x, int y) {
 }
 
 bool is_position_valid(level *lvl, int x, int y) {
-    if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) return false;
-    else {
+    if (x >= lvl->width || x < 0) {
+        fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "x is out of bounds", x);
+        return false;
+    } else if (y >= lvl->height || y < 0) {
+        fprintf(stderr, "ERROR %s: %s: %d\n", "is_position_valid", "y is out of bounds", y);
+        return false;
+    } else if (lvl->tiles[x][y] == WALL || lvl->tiles[x][y] == CLOSED_DOOR) {
+        // from a performance standpoint, this should be the first test
+        return false;
+    } else {
         for (int i=0; i < lvl->mob_count; i++) {
             if (lvl->mobs[i]->active && !lvl->mobs[i]->stacks && lvl->mobs[i]->x == x && lvl->mobs[i]->y == y) {
                 return false;
@@ -348,3 +388,40 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
     }
 }
 
+static void set_steps(int *x_step, float *slope, int a_x, int a_y, int b_x, int b_y) {
+    int dx = b_x - a_x;
+    int dy = b_y - a_y;
+
+    *slope = (float) dy / dx;
+    *x_step = dx < 0 ? -1 : 1;
+
+    //fprintf(stderr, "[%s] xs %2d m %6.2f (%2d/%2d) ax %2d ay %2d bx %2d by %2d\n", "set_steps", *x_step, *slope, dy, dx, a_x, a_y, b_x, b_y);
+}
+
+bool line_of_sight(level *lvl, int a_x, int a_y, int b_x, int b_y) {
+    // This is between two positions, theoretically non-directional
+    int x_step;
+    float slope;
+    float acc_err = 0;
+
+    set_steps(&x_step, &slope, a_x, a_y, b_x, b_y);
+
+    //while (!(a_x == b_x && a_y == b_y)) {
+    while (true) {
+        next_square(&a_x, &a_y, x_step, slope, &acc_err);
+
+        if (a_x == b_x && a_y == b_y) return true;
+
+        if (!(is_position_valid(lvl, a_x, a_y))) return false;
+
+        // lvl->tiles[a_x][a_y] = '+';
+        //fprintf(stderr, "Placed a '+' at (%2d, %2d)\n", a_x, a_y);
+    }
+}
+
+bool can_see(level *lvl, mobile *actor, int target_x, int target_y) {
+    // This is between a thing and a position
+    // It just wraps line_of_sight for easier English reading
+    // Making a thing-to-thing function seems too specific
+    return (line_of_sight(lvl, actor->x, actor->y, target_x, target_y));
+}
