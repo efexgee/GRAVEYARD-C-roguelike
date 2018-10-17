@@ -117,7 +117,7 @@ void pickup_item(level *lvl, mobile *mob) {
     }
 }
 
-void smash(level *lvl, mobile *mob) {
+void smash_potion(level *lvl, mobile *mob) {
     item *potion = ((item*)mob)->contents->item;
     add_constituents(lvl->chemistry[mob->x][mob->y], potion->chemistry);
     inventory_item *inv = ((item*)mob)->contents;
@@ -126,7 +126,7 @@ void smash(level *lvl, mobile *mob) {
     destroy_item(potion);
 }
 
-void print_location_elements(level *lvl, mobile *mob) {
+void print_tile_elements(level *lvl, mobile *mob) {
     char *message = malloc(sizeof(char)*MESSAGE_LENGTH);
     constituents *chem = lvl->chemistry[mob->x][mob->y];
     snprintf(message, MESSAGE_LENGTH, "wood: %d air: %d fire: %d", chem->elements[wood], chem->elements[air], chem->elements[fire]);
@@ -200,7 +200,7 @@ int get_input(level *lvl) {
         case 'r':
             rotate_inventory(lvl->player);
             inventory = inventory_string(lvl->player, MESSAGE_LENGTH);
-            snprintf(message, MESSAGE_LENGTH, "Your inventory contains: %s", inventory);
+            snprintf(message, MESSAGE_LENGTH, "Currently selected item -> %s", inventory);
             print_message(message);
             free((void*)inventory);
             break;
@@ -213,7 +213,7 @@ int get_input(level *lvl) {
             break;
         case 'v':
             if (((item*)lvl->player)->contents != NULL && ((item*)lvl->player)->contents->item->type == Potion) {
-                smash(lvl, lvl->player);
+                smash_potion(lvl, lvl->player);
                 print_message("You smash the potion on the floor.");
             } else print_message("That isn't a potion.");
             break;
@@ -232,7 +232,7 @@ int get_input(level *lvl) {
             print_message(message);
             break;
         case 't':
-            print_location_elements(lvl, lvl->player);
+            print_tile_elements(lvl, lvl->player);
             break;
         case 'o':
             toggle_door(lvl, lvl->player);
@@ -304,11 +304,12 @@ void level_step_chemistry(level* lvl) {
                 }
                 inv = inv->next;
             }
+            //TODO make constants? tiles regen 3 air if they are below 20?
             if (lvl->tiles[x][y] != WALL && lvl->tiles[x][y] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[air] < 20) lvl->chemistry[x][y]->elements[air] += 3;
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
-        if (lvl->chem_sys->volitile[element]) {
+        if (lvl->chem_sys->is_volatile[element]) {
             int **added_element = malloc(lvl->width * sizeof(int*));
             added_element[0] = malloc(lvl->height * lvl->width * sizeof(int));
             int **removed_element = malloc(lvl->width * sizeof(int*));
@@ -324,6 +325,8 @@ void level_step_chemistry(level* lvl) {
                 }
             }
 
+            //ASK I cannot tell whether these are magic numbers or not
+            //because I have no idea what's going on here.
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
                     int rx = rand();
