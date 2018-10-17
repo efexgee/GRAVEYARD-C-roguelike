@@ -10,19 +10,20 @@
 #include "los/los.h"
 #include "colors/colors.h"
 
+#define MESSAGE_LENGTH 200
+
 int keyboard_x = 0, keyboard_y = 0;
-char message_banner[200];
+char message_banner[MESSAGE_LENGTH];
 
-
-void draw_mobile(mobile *mob, int dx, int dy) {
-    char display = ((item*)mob)->display;
+void draw_mobile(mobile *mob, int x_offset, int y_offset) {
+    char icon = ((item*)mob)->display;
 
     if (mob->emote) {
-        display = mob->emote;
+        icon = mob->emote;
         mob->emote = false;
     }
 
-    mvprintw(dy+mob->y, dx+mob->x, "%c", display);
+    mvprintw(mob->y + y_offset, mob->x + x_offset, "%c", icon);
 }
 
 void draw(level *lvl) {
@@ -30,60 +31,66 @@ void draw(level *lvl) {
     getmaxyx(stdscr,row,col);
     row -= 1;
 
-    int dx = col/2 - lvl->player->x;
-    int dy = row/2 - lvl->player->y;
+    // Offset to keep player in center
+    int x_offset = col / 2 - lvl->player->x;
+    int y_offset = row / 2 - lvl->player->y;
 
-    for (int x = 0; x < col; x++) {
-        for (int y = 0; y < row; y++) {
-            int xx = x - dx;
-            int yy = y - dy;
-            char display = UNSEEN;
-            // Positions which are part of the map
-            if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
-                if (can_see(lvl, lvl->player, xx, yy)) {
-                    // Burning supercedes everything!
-                    if (lvl->chemistry[xx][yy]->elements[fire] > 0) {
-                        display = BURNING;
+    // Draw map and items
+    for (int xx = 0; xx < col; xx++) {
+        for (int yy = 0; yy < row; yy++) {
+            // (xx,yy) are screen coordinates
+            // (x ,y ) are map coordinates
+            int x = xx - x_offset;
+            int y = yy - y_offset;
+
+            char icon = UNSEEN;
+
+            if ((0 <= x && x < lvl->width) && (0 <= y && y < lvl->height)) {
+                //TODO wrapper function with clear name
+                if (can_see(lvl, lvl->player, x, y)) {
+                    if (lvl->chemistry[x][y]->elements[fire] > 0) {
+                        icon = BURNING;
                         attron(COLOR_PAIR(RED));
+                    } else if (lvl->items[x][y] != NULL) {
+                        icon = lvl->items[x][y]->item->display;
                     } else {
-                        // Draw items
-                        if (lvl->items[xx][yy] != NULL) {
-                            display = lvl->items[xx][yy]->item->display;
-                        } else {
-                            // Draw the square
-                            display = lvl->tiles[xx][yy];
-                        }
+                        icon = lvl->tiles[x][y];
                     }
                 }
-                if (display == UNSEEN) {
-                    display = lvl->memory[xx][yy];
+                // Fog of war
+                if (icon == UNSEEN) {
+                    icon = lvl->memory[x][y];
                     attron(COLOR_PAIR(YELLOW));
                 } else {
-                    lvl->memory[xx][yy] = display;
+                    lvl->memory[x][y] = icon;
                 }
             }
-            mvprintw(y, x, "%c", display);
-            // this should be a general unsetter, not this
+            mvprintw(yy, xx, "%c", icon);
+            //TODO this should be a general unsetter, not this
             attroff(COLOR_PAIR(YELLOW));
             attroff(COLOR_PAIR(RED));
         }
     }
+
+    // Draw mobs
     for (int i=0; i < lvl->mob_count; i++) {
-        if (lvl->mobs[i]->active && can_see(lvl, lvl->player, lvl->mobs[i]->x, lvl->mobs[i]->y)) {
-            mobile* mob = lvl->mobs[i];
-            if (mob->y+dy > 0 && mob->y+dy <= row && mob->x+dx > 0 && mob->x+dx <= col) {
-                draw_mobile(lvl->mobs[i], dx, dy);
+        mobile* mob = lvl->mobs[i];
+        if (mob->active && can_see(lvl, lvl->player, mob->x, mob->y)) {
+            if ((0 < mob->y + y_offset && mob->y + y_offset <= row) && (0 < mob->x + x_offset && mob->x + x_offset <= col)) {
+                draw_mobile(mob, x_offset, y_offset);
             }
         }
     }
-    draw_mobile(lvl->player, dx, dy);
+    draw_mobile(lvl->player, x_offset, y_offset);
     move(row, 0);
     clrtoeol();
     mvprintw(row, 0, message_banner);
 }
 
+//TODO When the same message (e.g. quaff) is repeated, it
+//should be clear somehow that there were multiple messages
 void print_message(char *msg) {
-    strncpy(message_banner, msg, 200);
+    strncpy(message_banner, msg, MESSAGE_LENGTH);
 }
 
 void drop_item(level *lvl, mobile *mob) {
@@ -91,8 +98,8 @@ void drop_item(level *lvl, mobile *mob) {
     if (item != NULL) {
         level_push_item(lvl, item, mob->x, mob->y);
         if (mob == lvl->player) {
-            char msg[200];
-            snprintf(msg, 200, "You drop the %s", item->name);
+            char msg[MESSAGE_LENGTH];
+            snprintf(msg, MESSAGE_LENGTH, "You drop the %s", item->name);
             print_message(msg);
         }
     }
@@ -103,8 +110,8 @@ void pickup_item(level *lvl, mobile *mob) {
     if (item != NULL) {
         push_inventory(mob, item);
         if (mob == lvl->player) {
-            char msg[200];
-            snprintf(msg, 200, "You pick up the %s", item->name);
+            char msg[MESSAGE_LENGTH];
+            snprintf(msg, MESSAGE_LENGTH, "You pick up the %s", item->name);
             print_message(msg);
         }
     }
@@ -120,9 +127,9 @@ void smash(level *lvl, mobile *mob) {
 }
 
 void print_location_elements(level *lvl, mobile *mob) {
-    char *message = malloc(sizeof(char)*200);
+    char *message = malloc(sizeof(char)*MESSAGE_LENGTH);
     constituents *chem = lvl->chemistry[mob->x][mob->y];
-    snprintf(message, 200, "wood: %d air: %d fire: %d", chem->elements[wood], chem->elements[air], chem->elements[fire]);
+    snprintf(message, MESSAGE_LENGTH, "wood: %d air: %d fire: %d", chem->elements[wood], chem->elements[air], chem->elements[fire]);
     print_message(message);
     free((void*)message);
 }
@@ -154,11 +161,12 @@ void toggle_door(level *lvl, mobile *mob) {
 }
 
 int get_input(level *lvl) {
+    //TODO Don't advance turn on any key press.
+    //Have explicit "wait" key (e.g. <SPACE>)
     char *inventory;
-    char *message = malloc(sizeof(char)*200);
+    char *message = malloc(sizeof(char)*MESSAGE_LENGTH);
     int input = getch();
     int return_code = 0;
-
 
     switch (input) {
         case KEY_UP:
@@ -173,9 +181,13 @@ int get_input(level *lvl) {
         case KEY_LEFT:
             lvl->keyboard_x = -1;
             break;
+        case 'H':
+            snprintf(message, MESSAGE_LENGTH, "HELP: (i)nv (d)rop (.)pickup (r)otate inv (q)uaff (v)smash (e)xamine (s)tatus (t)ile (Q)uit");
+            print_message(message);
+            break;
         case 'i':
-            inventory = inventory_string(lvl->player, 200);
-            snprintf(message, 200, "Your inventory contains: %s", inventory);
+            inventory = inventory_string(lvl->player, MESSAGE_LENGTH);
+            snprintf(message, MESSAGE_LENGTH, "Your inventory contains: %s", inventory);
             print_message(message);
             free((void*)inventory);
             break;
@@ -187,8 +199,8 @@ int get_input(level *lvl) {
             break;
         case 'r':
             rotate_inventory(lvl->player);
-            inventory = inventory_string(lvl->player, 200);
-            snprintf(message, 200, "Your inventory contains: %s", inventory);
+            inventory = inventory_string(lvl->player, MESSAGE_LENGTH);
+            snprintf(message, MESSAGE_LENGTH, "Your inventory contains: %s", inventory);
             print_message(message);
             free((void*)inventory);
             break;
@@ -207,7 +219,7 @@ int get_input(level *lvl) {
             break;
         case 'e':
             if (((item*)lvl->player)->contents != NULL) {
-                snprintf(message, 200, "wood: %d fire: %d ash: %d",
+                snprintf(message, MESSAGE_LENGTH, "wood: %d fire: %d ash: %d",
                         ((item*)lvl->player)->contents->item->chemistry->elements[wood],
                         ((item*)lvl->player)->contents->item->chemistry->elements[fire],
                         ((item*)lvl->player)->contents->item->chemistry->elements[ash]
@@ -216,7 +228,7 @@ int get_input(level *lvl) {
             }
             break;
         case 's':
-            snprintf(message, 200, "You have %d hit points. venom: %d banz: %d life: %d", ((item*)lvl->player)->health, ((item*)lvl->player)->chemistry->elements[venom], ((item*)lvl->player)->chemistry->elements[banz], ((item*)lvl->player)->chemistry->elements[life]);
+            snprintf(message, MESSAGE_LENGTH, "You have %d hit points. venom: %d banz: %d life: %d", ((item*)lvl->player)->health, ((item*)lvl->player)->chemistry->elements[venom], ((item*)lvl->player)->chemistry->elements[banz], ((item*)lvl->player)->chemistry->elements[life]);
             print_message(message);
             break;
         case 't':
@@ -287,6 +299,7 @@ void level_step_chemistry(level* lvl) {
                 step_item(lvl, inv->item, lvl->chemistry[x][y]);
                 if (inv->item->health <= 0) {
                     inv->item->name = "Ashy Remnants";
+                    //TODO Hard-coded icon
                     inv->item->display = '~';
                 }
                 inv = inv->next;
@@ -356,7 +369,7 @@ int main() {
         initscr();
 
         if (! init_colors()) {
-            // would be nice to print terminal var here
+            //TODO print TERM environment variable
             fprintf(stderr, "Terminal does not support color.\n");
             exit(1);
         }
@@ -400,7 +413,7 @@ int main() {
                 break;
             }
 
-            // Reset message
+            // Clear message
             print_message("");
 
         } while (get_input(lvl) == 0);
