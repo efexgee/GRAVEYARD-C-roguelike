@@ -412,6 +412,7 @@ int main() {
 
             // If the player is dead, wait for input
             if (!lvl->player->active) {
+                //TODO Require explicit input to really create a pause
                 getch();
                 break;
             }
