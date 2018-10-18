@@ -8,6 +8,9 @@
 
 mobile* make_mob(struct Level *lvl) {
     mobile *mob = malloc(sizeof(mobile));
+    //TODO If ' ' is sort of a initial NULL icon, I would name
+    //it that and maybe make it an obvious character so it really
+    //shows up if we forget to set it
     ((item*)mob)->display = ' ';
     ((item*)mob)->chemistry = make_constituents();
     ((item*)mob)->type = Creature;
@@ -16,6 +19,8 @@ mobile* make_mob(struct Level *lvl) {
     mob->lvl = lvl;
     mob->x = 0;
     mob->y = 0;
+    //TODO Is this really a magic number? I think it's maybe
+    //the intuitive init value for HP
     ((item*)mob)->health = 1;
     mob->active = false;
     mob->stacks = false;

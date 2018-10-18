@@ -8,9 +8,7 @@
 #include "mob/mob.h"
 #include "simulation/simulation.h"
 #include "los/los.h"
-#include "colors/colors.h"
-
-#define MESSAGE_LENGTH 200
+#include "color/color.h"
 
 int keyboard_x = 0, keyboard_y = 0;
 char message_banner[MESSAGE_LENGTH];
@@ -43,13 +41,13 @@ void draw(level *lvl) {
             int x = xx - x_offset;
             int y = yy - y_offset;
 
-            char icon = UNSEEN;
+            char icon = TILE_UNSEEN;
 
             if ((0 <= x && x < lvl->width) && (0 <= y && y < lvl->height)) {
                 //TODO wrapper function with clear name
                 if (can_see(lvl, lvl->player, x, y)) {
                     if (lvl->chemistry[x][y]->elements[fire] > 0) {
-                        icon = BURNING;
+                        icon = STATUS_BURNING;
                         attron(COLOR_PAIR(RED));
                     } else if (lvl->items[x][y] != NULL) {
                         icon = lvl->items[x][y]->item->display;
@@ -58,7 +56,7 @@ void draw(level *lvl) {
                     }
                 }
                 // Fog of war
-                if (icon == UNSEEN) {
+                if (icon == TILE_UNSEEN) {
                     icon = lvl->memory[x][y];
                     attron(COLOR_PAIR(YELLOW));
                 } else {
@@ -153,10 +151,10 @@ void toggle_door(level *lvl, mobile *mob) {
         default:
             return;
     }
-    if (lvl->tiles[x][y] == OPEN_DOOR) {
-        lvl->tiles[x][y] = CLOSED_DOOR;
-    } else if (lvl->tiles[x][y] == CLOSED_DOOR) {
-        lvl->tiles[x][y] = OPEN_DOOR;
+    if (lvl->tiles[x][y] == DOOR_OPEN) {
+        lvl->tiles[x][y] = DOOR_CLOSED;
+    } else if (lvl->tiles[x][y] == DOOR_CLOSED) {
+        lvl->tiles[x][y] = DOOR_OPEN;
     }
 }
 
@@ -305,7 +303,7 @@ void level_step_chemistry(level* lvl) {
                 inv = inv->next;
             }
             //TODO make constants? tiles regen 3 air if they are below 20?
-            if (lvl->tiles[x][y] != WALL && lvl->tiles[x][y] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[air] < 20) lvl->chemistry[x][y]->elements[air] += 3;
+            if (lvl->tiles[x][y] != TILE_WALL && lvl->tiles[x][y] != DOOR_CLOSED && lvl->chemistry[x][y]->elements[air] < 20) lvl->chemistry[x][y]->elements[air] += 3;
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
@@ -336,7 +334,7 @@ void level_step_chemistry(level* lvl) {
                         for (int dy = 0; dy < 2; dy++) {
                             int yy = y + (((dy+ry)%3)-1);
                             if (xx >= 0 && xx < lvl->width && yy >= 0 && yy < lvl->height) {
-                                if (lvl->tiles[xx][yy] != WALL && lvl->tiles[xx][yy] != CLOSED_DOOR && lvl->chemistry[x][y]->elements[element] - removed_element[x][y] > lvl->chemistry[xx][yy]->elements[element] + added_element[xx][yy]) {
+                                if (lvl->tiles[xx][yy] != TILE_WALL && lvl->tiles[xx][yy] != DOOR_CLOSED && lvl->chemistry[x][y]->elements[element] - removed_element[x][y] > lvl->chemistry[xx][yy]->elements[element] + added_element[xx][yy]) {
                                     removed_element[x][y] += 1;
                                     added_element[xx][yy] += 1;
                                 }
