@@ -1,7 +1,7 @@
 # supported targets:
 #   all, <default>: update dependencies on .h files, then build game
-#   run: build strict, then execute with stderr redirected to errors FIFO
-#   console: run error console printing contents of errors FIFO
+#   run: build strict, then execute with stderr redirected to .errors FIFO
+#   console: run error console printing contents of .errors FIFO
 #   game: just build game without updating dependencies
 #   depend: explicitly rebuild dependencies
 #   ansic: test compile as ANSI C
@@ -41,7 +41,7 @@ strict:
 debug:
 	$(MAKE) clean
 	$(MAKE) CFLAGS="-g" LDFLAGS="-g" game
-	gdb ./game 2> errors || reset
+	gdb ./game 2> .errors || reset
 
 # clean up stuff, one step (note steps are tab-indented lines, each of which is executed as shell command in a subprocess using $(SHELL)
 # as the executable)
@@ -69,12 +69,12 @@ wtf:
 		-e 'LINK.c ='
 
 errors:
-	mkfifo errors
+	mkfifo .errors
 run: strict errors
-	./game 2> errors || reset
+	./game 2> .errors || reset
 # This only checks that "errors" exists, not whether it's a pipe
 console: errors
-	tail -f errors 
+	tail -f .errors 
 
 # DO NOT DELETE
 
