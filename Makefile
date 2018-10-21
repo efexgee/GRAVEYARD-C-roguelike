@@ -68,12 +68,12 @@ wtf:
 		-e 'COMPILE.c =' \
 		-e 'LINK.c ='
 
-errors:
+.errors:
 	mkfifo .errors
-run: strict errors
+run: strict .errors
 	./game 2> .errors || reset
 # This only checks that "errors" exists, not whether it's a pipe
-console: errors
+console: .errors
 	tail -f .errors 
 
 # DO NOT DELETE

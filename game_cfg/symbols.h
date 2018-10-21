@@ -23,3 +23,10 @@
 // Emotes
 #define EMOTE_OUCH '!'
 #define EMOTE_ANGRY '%'
+
+// Other
+
+// Initialization value only and should never be seen
+// May render as a black question mark on a white
+// lozenge, or an upside down question mark.
+#define ICON_UNDEFINED '\277'

@@ -1,5 +1,5 @@
 // Text colors
-#define DEFAULT -1
+#define ORIG_COLORS -1
 #define BLACK 0
 #define RED 1
 #define GREEN 2
