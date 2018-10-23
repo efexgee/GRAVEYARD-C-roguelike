@@ -330,7 +330,6 @@ void level_step_chemistry(level* lvl) {
                     int rx = rand();
                     int ry = rand();
                     for (int dx = 0; dx < 2; dx++) {
-                        //TODO Are these parans in the right place?
                         int xx = x + (((dx+rx)%3)-1);
                         for (int dy = 0; dy < 2; dy++) {
                             int yy = y + (((dy+ry)%3)-1);
