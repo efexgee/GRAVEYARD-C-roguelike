@@ -324,6 +324,7 @@ void level_step_chemistry(level* lvl) {
                 }
             }
 
+            //TODO Make these variable names descriptive
             for (int x = 0; x < lvl->width; x++) {
                 for (int y = 0; y < lvl->height; y++) {
                     int rx = rand();
