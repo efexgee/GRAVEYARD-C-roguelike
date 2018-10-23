@@ -73,6 +73,7 @@ level* make_level(void) {
     int level_width = MAX_MAP_WIDTH;
     int level_height = MAX_MAP_HEIGHT;
 
+    lvl->active = true;
     lvl->width = level_width;
     lvl->height = level_height;
     lvl->keyboard_x = lvl->keyboard_y = 0;

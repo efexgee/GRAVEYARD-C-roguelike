@@ -23,6 +23,7 @@ typedef struct Level {
     mobile **mobs;
     int mob_count;
     mobile *player;
+    bool active;
 } level;
 
 level* make_level(void);
