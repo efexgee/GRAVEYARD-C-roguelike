@@ -12,14 +12,16 @@
 #include "simulation/simulation.h"
 #include "los/los.h"
 
+//TODO These will ultimately get pulled into the game internals header
 #define TILE_AIR_REGEN_THRESHOLD 20
 #define TILE_AIR_REGEN_RATE 3
-
 
 void step_chemistry(chemical_system *sys, constituents *chem, constituents *context) {
     for (int i = 0; i < 3; i++) {
         bool is_stable = chem->stable;
-        if (context != NULL) is_stable = is_stable && context->stable;
+        if (context != NULL) {
+            is_stable = (is_stable && context->stable);
+        }
         if (!is_stable) {
             react(sys, chem, context);
         }
@@ -33,12 +35,16 @@ void step_inventory_chemistry(chemical_system *sys, inventory_item *inv, constit
     }
 }
 
-void step_item(level *lvl, item *itm, constituents *chem_ctx) {
-    step_chemistry(lvl->chem_sys, itm->chemistry, chem_ctx);
+void step_item(level *lvl, item *itm, constituents *context) {
+    step_chemistry(lvl->chem_sys, itm->chemistry, context);
     step_inventory_chemistry(lvl->chem_sys, itm->contents, itm->chemistry);
     bool burning = itm->chemistry->elements[fire] > 0;
-    if (chem_ctx != NULL) burning = burning || chem_ctx->elements[fire] > 0;
-    if (burning && itm->health > 0) item_deal_damage(lvl, itm, 1);
+    if (context != NULL) {
+         burning = (burning || context->elements[fire] > 0);
+    }
+    if (burning && itm->health > 0) {
+        item_deal_damage(lvl, itm, 1);
+    }
 }
 
 void step_mobile(level *lvl, mobile *mob) {

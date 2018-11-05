@@ -37,10 +37,9 @@ void cleanup_rendering_system(void) {
     endwin();
 }
 
-
-//TODO When the same message (e.g. quaff) is repeated, it
-//should be clear somehow that there were multiple messages
 void print_message(char *msg) {
+    //TODO When the same message (e.g. quaff) is repeated, it
+    //should be clear somehow that there were multiple messages
     strncpy(message_banner, msg, MESSAGE_LENGTH);
 }
 
