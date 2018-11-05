@@ -71,18 +71,20 @@ void step_mobile(level *lvl, mobile *mob) {
 void level_step_chemistry(level* lvl) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            step_chemistry(lvl->chem_sys, lvl->chemistry[x][y], NULL);
+            char *tile = &lvl->tiles[x][y];
+            constituents **tile_chemistry = &lvl->chemistry[x][y];
+            step_chemistry(lvl->chem_sys, *tile_chemistry, NULL);
             inventory_item *inv = lvl->items[x][y];
             while (inv != NULL) {
-                step_item(lvl, inv->item, lvl->chemistry[x][y]);
+                step_item(lvl, inv->item, *tile_chemistry);
                 if (inv->item->health <= 0) {
                     inv->item->name = "Ashy Remnants";
                     inv->item->display = ICON_ASH;
                 }
                 inv = inv->next;
             }
-            if (lvl->tiles[x][y] != TILE_WALL && lvl->tiles[x][y] != DOOR_CLOSED && lvl->chemistry[x][y]->elements[air] < TILE_AIR_REGEN_THRESHOLD) {
-                lvl->chemistry[x][y]->elements[air] += TILE_AIR_REGEN_RATE;
+            if (*tile != TILE_WALL && *tile != DOOR_CLOSED && (*tile_chemistry)->elements[air] < TILE_AIR_REGEN_THRESHOLD) {
+                (*tile_chemistry)->elements[air] += TILE_AIR_REGEN_RATE;
             }
         }
     }
