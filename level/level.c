@@ -131,7 +131,7 @@ level* make_level(void) {
     lvl->player->active = true;
 
     item* potion = malloc(sizeof(item)); // FIXME leaks
-    potion->display = '!';
+    potion->display = ICON_POTION;
     potion->health = 1;
     potion->chemistry = make_constituents();
     potion->chemistry->elements[phosphorus] = 30;
@@ -140,7 +140,7 @@ level* make_level(void) {
     push_inventory(lvl->player, potion);
 
     item* poison = malloc(sizeof(item)); // FIXME leaks
-    poison->display = '!';
+    poison->display = ICON_POTION;
     poison->health = 1;
     poison->chemistry = make_constituents();
     poison->chemistry->elements[venom] = 30;
@@ -149,7 +149,7 @@ level* make_level(void) {
     push_inventory(lvl->player, poison);
 
     item* antidote = malloc(sizeof(item)); // FIXME leaks
-    antidote->display = '!';
+    antidote->display = ICON_POTION;
     antidote->health = 1;
     antidote->chemistry = make_constituents();
     antidote->chemistry->elements[banz] = 30;
@@ -158,7 +158,7 @@ level* make_level(void) {
     push_inventory(lvl->player, antidote);
 
     item* stick = malloc(sizeof(item)); // FIXME leaks
-    stick->display = '_';
+    stick->display = ICON_STICK;
     stick->health = 5;
     stick->chemistry = make_constituents();
     stick->chemistry->elements[wood] = 30;
