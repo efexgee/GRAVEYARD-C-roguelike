@@ -81,7 +81,9 @@ void level_step_chemistry(level* lvl) {
                 }
                 inv = inv->next;
             }
-            if (lvl->tiles[x][y] != TILE_WALL && lvl->tiles[x][y] != DOOR_CLOSED && lvl->chemistry[x][y]->elements[air] < TILE_AIR_REGEN_THRESHOLD) lvl->chemistry[x][y]->elements[air] += TILE_AIR_REGEN_RATE;
+            if (lvl->tiles[x][y] != TILE_WALL && lvl->tiles[x][y] != DOOR_CLOSED && lvl->chemistry[x][y]->elements[air] < TILE_AIR_REGEN_THRESHOLD) {
+                lvl->chemistry[x][y]->elements[air] += TILE_AIR_REGEN_RATE;
+            }
         }
     }
     for (int element = 0; element < ELEMENT_COUNT; element++) {
