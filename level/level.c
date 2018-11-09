@@ -329,62 +329,108 @@ int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
 }
 
 static void partition(level *lvl) {
+    // tile-to-room ID mapping
     int **partitioning = malloc(lvl->width * sizeof(int*));
-    for (int i = 0; i != lvl->width; i++) partitioning[i] = malloc(lvl->height*sizeof(int));
-    int **potential_doors= malloc(lvl->width * sizeof(int*));
-    for (int i = 0; i != lvl->width; i++) potential_doors[i] = malloc(lvl->height*sizeof(int));
+    for (int i = 0; i != lvl->width; i++) {
+        partitioning[i] = malloc(lvl->height*sizeof(int));
+    }
 
+    // matrix of potential door locations
+    int **potential_doors= malloc(lvl->width * sizeof(int*));
+    for (int i = 0; i != lvl->width; i++) {
+        potential_doors[i] = malloc(lvl->height*sizeof(int));
+    }
+
+    // calculate number of rooms, and perform partioning
     int rooms = rec_partition(partitioning, 0, 0, lvl->width, lvl->height, 0);
 
+    // initialize all tiles to bare floor
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             lvl->tiles[x][y] = TILE_FLOOR;
         }
     }
 
+    // for every tile
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            for (int dx = -1; dx < 1; ++dx) for (int dy = -1; dy < 1; ++dy) {
-                int xx = x+dx;
-                int yy = y+dy;
-                if (xx < 0 || yy < 0 || xx >= lvl->width -1 || yy >= lvl->height -1) {
-                    lvl->tiles[x][y] = TILE_WALL;
-                } else if (partitioning[xx][yy] != partitioning[x][y]) {
-                    lvl->tiles[x][y] = TILE_WALL;
-                    if (abs(dx+dy) == 1) {
-                        potential_doors[x][y] = true;
+            // for all nine squares around the the tile
+            //TODO What does prefix vs. postfix do in for loops?
+            for (int dx = -1; dx < 1; ++dx) {
+                for (int dy = -1; dy < 1; ++dy) {
+                    int xx = x+dx;
+                    int yy = y+dy;
+                    // if it's the level border, it's a wall
+                    //TODO Why less than zero?
+                    if (xx < 0 || yy < 0 || xx >= lvl->width -1 || yy >= lvl->height -1) {
+                        lvl->tiles[x][y] = TILE_WALL;
+                    // if it's a room boundary (i.e. room ID changes), it's a wall
+                    } else if (partitioning[xx][yy] != partitioning[x][y]) {
+                        lvl->tiles[x][y] = TILE_WALL;
+                        // doors can only be N, E, S, or W of us
+                        if (abs(dx+dy) == 1) {
+                            potential_doors[x][y] = true;
+                        }
                     }
                 }
             }
         }
     }
 
+    // whether each room is accessible from the "root" room
     bool room_accessible[rooms];
-    for (int i = 0; i < rooms; i++) room_accessible[i] = false;
+    for (int i = 0; i < rooms; i++) {
+        room_accessible[i] = false;
+    }
+
+    // the "root" room
     room_accessible[partitioning[0][0]] = true;
+
+    // for each tile
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
+            // check every square which could be a door
             if (potential_doors[x][y]) {
                 bool door_needed = false;
                 bool door_possible = false;
+
                 int rm_a, rm_b;
+
+                // a "horizontal" door
                 if (x+1 < lvl->width && x-1 >= 0 && lvl->tiles[x+1][y] != TILE_WALL && lvl->tiles[x-1][y] != TILE_WALL) {
                     rm_a = partitioning[x+1][y];
                     rm_b = partitioning[x-1][y];
                     door_possible = true;
                 }
+                // a "vertical" door
+                //TODO is an 'else if' theoretically more efficient?
                 if (y+1 < lvl->height && y-1 >= 0 && lvl->tiles[x][y+1] != TILE_WALL && lvl->tiles[x][y-1] != TILE_WALL) {
                     rm_a = partitioning[x][y+1];
                     rm_b = partitioning[x][y-1];
                     door_possible = true;
                 }
+
+                // We are looking at a square that:
+                //  - is part of a partitioning wall
+                //  - is not at a corner or intersection
+                //  - connects two rooms via a straight line (not guaranteed by previous?)
+
+                // Roll the dice to see if it's a door
                 if (door_possible && rand()%100 > 0) {
+                    //TODO these two 'if' statements are basically 'AND'-ed?
+                    // (Behold the hideous 'XOR'! It comes for you in the night...)
                     if (room_accessible[rm_a] + !room_accessible[rm_b] != 1) {
+                        // If one of the connected rooms is already accessible and
+                        // the other is not, then there must be a door here and
+                        // now both rooms are accessible.
+                        //TODO The two rooms must be connected, but do they need to
+                        //TODO be connected at this square? I don't think so.
                         door_needed = true;
                         room_accessible[rm_b]=true;
                         room_accessible[rm_a]=true;
                     }
                 }
+                //TODO Why not do this right inside the 'if' above? These are refactor droppings?
                 if (door_needed) {
                     lvl->tiles[x][y] = DOOR_OPEN;
                 } else {
