@@ -24,6 +24,8 @@
 
 // Items
 #define ICON_ASH '~'
+#define ICON_POTION '!'
+#define ICON_STICK '_'
 
 // Emotes
 #define EMOTE_OUCH '!'
