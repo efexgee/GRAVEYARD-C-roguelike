@@ -8,6 +8,8 @@
 #include "../mob/mob.h"
 #include "../los/los.h"
 
+//TODO Can we add a repeatable seed feature? I think trivial, right?
+
 static bool one_step(level *lvl, int *from_x, int *from_y, int to_x, int to_y) {
     int dx = to_x - *from_x;
     int dy = to_y - *from_y;
@@ -303,6 +305,7 @@ void destroy_level(level *lvl) {
     free((void *)lvl);
 }
 
+//TODO clearer function name?
 int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
     if (w*h > 10*10 && rand()%100 < PARTITIONING_PERCENTAGE) {
         int hw = w/2;
@@ -330,42 +333,47 @@ int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
 
 static void partition(level *lvl) {
     // tile-to-room ID mapping
-    int **partitioning = malloc(lvl->width * sizeof(int*));
+    //TODO even clearer var name to remove this comment?
+    int **room_ids = malloc(lvl->width * sizeof(int*));
     for (int i = 0; i != lvl->width; i++) {
-        partitioning[i] = malloc(lvl->height*sizeof(int));
+        room_ids[i] = malloc(lvl->height*sizeof(int));
     }
 
-    // matrix of potential door locations
     int **potential_doors= malloc(lvl->width * sizeof(int*));
     for (int i = 0; i != lvl->width; i++) {
         potential_doors[i] = malloc(lvl->height*sizeof(int));
     }
 
-    // calculate number of rooms, and perform partioning
-    int rooms = rec_partition(partitioning, 0, 0, lvl->width, lvl->height, 0);
+    // perform partitioning and get highest room ID
+    //TODO clearer function name to remove this comment
+    int max_room_id = rec_partition(room_ids, 0, 0, lvl->width, lvl->height, 0);
 
     // initialize all tiles to bare floor
+    //TODO Optimization vs. readability: bare floor initialization
+    //TODO could be inside an 'else' down below.
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             lvl->tiles[x][y] = TILE_FLOOR;
         }
     }
 
-    // for every tile
+    //TODO Any problem with skipping the border squares?
+    //TODO Does that mean I'm not drawing the border walls?
+
+    //TODO 'potential_doors' was getting border squares. how?
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            // for all nine squares around the the tile
+            // for all nine squares around the tile
             //TODO What does prefix vs. postfix do in for loops?
             for (int dx = -1; dx < 1; ++dx) {
                 for (int dy = -1; dy < 1; ++dy) {
                     int xx = x+dx;
                     int yy = y+dy;
                     // if it's the level border, it's a wall
-                    //TODO Why less than zero?
                     if (xx < 0 || yy < 0 || xx >= lvl->width -1 || yy >= lvl->height -1) {
                         lvl->tiles[x][y] = TILE_WALL;
                     // if it's a room boundary (i.e. room ID changes), it's a wall
-                    } else if (partitioning[xx][yy] != partitioning[x][y]) {
+                    } else if (room_ids[xx][yy] != room_ids[x][y]) {
                         lvl->tiles[x][y] = TILE_WALL;
                         // doors can only be N, E, S, or W of us
                         if (abs(dx+dy) == 1) {
@@ -378,70 +386,67 @@ static void partition(level *lvl) {
     }
 
     // whether each room is accessible from the "root" room
-    bool room_accessible[rooms];
-    for (int i = 0; i < rooms; i++) {
-        room_accessible[i] = false;
+    bool room_connected[max_room_id];
+
+    //TODO Use comprehension here to initialize room_connected[]
+    for (int i = 0; i < max_room_id; i++) {
+        room_connected[i] = false;
     }
 
     // the "root" room
-    room_accessible[partitioning[0][0]] = true;
+    //TODO randomly pick?
+    room_connected[room_ids[0][0]] = true;
 
-    // for each tile
-    for (int x = 0; x < lvl->width; x++) {
-        for (int y = 0; y < lvl->height; y++) {
-            // check every square which could be a door
+    // We are building a tree of connected rooms (via door placement)
+    // starting at a "root" room. Potential doors only become doors if
+    // they would connected an already-connected room to an unconnected
+    // room. 
+    //TODO Any problem with skipping the border squares?
+    for (int x = 1; x < lvl->width - 1; x++) {
+        for (int y = 1; y < lvl->height - 1; y++) {
             if (potential_doors[x][y]) {
-                bool door_needed = false;
                 bool door_possible = false;
-
                 int rm_a, rm_b;
 
-                // a "horizontal" door
                 if (x+1 < lvl->width && x-1 >= 0 && lvl->tiles[x+1][y] != TILE_WALL && lvl->tiles[x-1][y] != TILE_WALL) {
-                    rm_a = partitioning[x+1][y];
-                    rm_b = partitioning[x-1][y];
+                // a "horizontal" door
+                    rm_a = room_ids[x+1][y];
+                    rm_b = room_ids[x-1][y];
                     door_possible = true;
-                }
+                } else if (y+1 < lvl->height && y-1 >= 0 && lvl->tiles[x][y+1] != TILE_WALL && lvl->tiles[x][y-1] != TILE_WALL) {
                 // a "vertical" door
-                //TODO is an 'else if' theoretically more efficient?
-                if (y+1 < lvl->height && y-1 >= 0 && lvl->tiles[x][y+1] != TILE_WALL && lvl->tiles[x][y-1] != TILE_WALL) {
-                    rm_a = partitioning[x][y+1];
-                    rm_b = partitioning[x][y-1];
+                    rm_a = room_ids[x][y+1];
+                    rm_b = room_ids[x][y-1];
                     door_possible = true;
                 }
 
-                // We are looking at a square that:
-                //  - is part of a partitioning wall
-                //  - is not at a corner or intersection
-                //  - connects two rooms via a straight line (not guaranteed by previous?)
-
-                // Roll the dice to see if it's a door
-                if (door_possible && rand()%100 > 0) {
-                    //TODO these two 'if' statements are basically 'AND'-ed?
-                    // (Behold the hideous 'XOR'! It comes for you in the night...)
-                    if (room_accessible[rm_a] + !room_accessible[rm_b] != 1) {
-                        // If one of the connected rooms is already accessible and
-                        // the other is not, then there must be a door here and
-                        // now both rooms are accessible.
-                        //TODO The two rooms must be connected, but do they need to
-                        //TODO be connected at this square? I don't think so.
-                        door_needed = true;
-                        room_accessible[rm_b]=true;
-                        room_accessible[rm_a]=true;
-                    }
+                if (! door_possible) {
+                    //TODO Checking whether the vertical/horizontal test is redundant
+                    logger("No door possible at (%d,%d)\n", x, y);
+                    //TODO It is not redundant currently. It rejects T-junction wall squares.
                 }
-                //TODO Why not do this right inside the 'if' above? These are refactor droppings?
-                if (door_needed) {
+
+                //TODO door chance constant
+                //TODO XOR macro?
+                if (door_possible && (rand()%100 > 0) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
+                    logger("Placing door at (%d,%d)\n", x, y);
                     lvl->tiles[x][y] = DOOR_OPEN;
+                    room_connected[rm_b]=true;
+                    room_connected[rm_a]=true;
                 } else {
+                    //TODO Limited testing indicates this is redundant
+                    //logger("Changing tile(%d,%d) from %c to %c\n", x, y, lvl->tiles[x][y], TILE_WALL);
                     lvl->tiles[x][y] = TILE_WALL;
                 }
+            } else {
+                //TODO Way too noisy to be useful
+                //logger("No potential door at (%d,%d)\n", x, y);
             }
         }
     }
 
-    free((void *)partitioning[0]);
-    free((void *)partitioning);
+    free((void *)room_ids[0]);
+    free((void *)room_ids);
     free((void *)potential_doors[0]);
     free((void *)potential_doors);
 }
