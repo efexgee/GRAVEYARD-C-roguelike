@@ -8,6 +8,11 @@
 #include "../mob/mob.h"
 #include "../los/los.h"
 
+//TODO this will be in the internals header
+#define DOOR_PROBABILITY 20 // percent
+
+//TODO should we use percentages or probabilities? I'm partial to %
+
 //TODO Can we add a repeatable seed feature? I think trivial, right?
 
 static bool one_step(level *lvl, int *from_x, int *from_y, int to_x, int to_y) {
@@ -232,7 +237,10 @@ level* make_level(void) {
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
         lvl->mobs[i]->active = true;
 
-        switch (rand()%4) {
+        //TODO magic number
+        //switch (rand()%4) {
+        //TODO disabled Minotaurs
+        switch (rand()%3) {
             case 0:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
                 lvl->mobs[i]->stacks = true;
@@ -394,8 +402,12 @@ static void partition(level *lvl) {
     }
 
     // the "root" room
+    //room_connected[room_ids[0][0]] = true;
+    //
     //TODO randomly pick?
-    room_connected[room_ids[0][0]] = true;
+    int rand_x = (rand() % (lvl->width - 1)) + 1;
+    int rand_y = (rand() % (lvl->height - 1)) + 1;
+    room_connected[room_ids[rand_x][rand_y]] = true;
 
     // We are building a tree of connected rooms (via door placement)
     // starting at a "root" room. Potential doors only become doors if
@@ -428,7 +440,7 @@ static void partition(level *lvl) {
 
                 //TODO door chance constant
                 //TODO XOR macro?
-                if (door_possible && (rand()%100 > 0) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
+                if (door_possible && (rand()%100 <= DOOR_PROBABILITY) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
                     logger("Placing door at (%d,%d)\n", x, y);
                     lvl->tiles[x][y] = DOOR_OPEN;
                     room_connected[rm_b]=true;
