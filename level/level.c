@@ -8,11 +8,6 @@
 #include "../mob/mob.h"
 #include "../los/los.h"
 
-//TODO this will be in the internals header
-#define DOOR_PROBABILITY 20 // percent
-
-//TODO should we use percentages or probabilities? I'm partial to %
-
 //TODO Can we add a repeatable seed feature? I think trivial, right?
 
 static bool one_step(level *lvl, int *from_x, int *from_y, int to_x, int to_y) {
@@ -239,7 +234,7 @@ level* make_level(void) {
 
         //TODO magic number
         //switch (rand()%4) {
-        //TODO disabled Minotaurs
+        //DEBUG disabled Minotaurs
         switch (rand()%3) {
             case 0:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
@@ -366,15 +361,13 @@ static void partition(level *lvl) {
     }
 
     //TODO Any problem with skipping the border squares?
-    //TODO Does that mean I'm not drawing the border walls?
 
     //TODO 'potential_doors' was getting border squares. how?
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             // for all nine squares around the tile
-            //TODO What does prefix vs. postfix do in for loops?
-            for (int dx = -1; dx < 1; ++dx) {
-                for (int dy = -1; dy < 1; ++dy) {
+            for (int dx = -1; dx < 1; dx++) {
+                for (int dy = -1; dy < 1; dy++) {
                     int xx = x+dx;
                     int yy = y+dy;
                     // if it's the level border, it's a wall
@@ -396,17 +389,14 @@ static void partition(level *lvl) {
     // whether each room is accessible from the "root" room
     bool room_connected[max_room_id];
 
-    //TODO Use comprehension here to initialize room_connected[]
     for (int i = 0; i < max_room_id; i++) {
         room_connected[i] = false;
     }
 
     // the "root" room
-    //room_connected[room_ids[0][0]] = true;
-    //
-    //TODO randomly pick?
     int rand_x = (rand() % (lvl->width - 1)) + 1;
     int rand_y = (rand() % (lvl->height - 1)) + 1;
+
     room_connected[room_ids[rand_x][rand_y]] = true;
 
     // We are building a tree of connected rooms (via door placement)
@@ -433,12 +423,11 @@ static void partition(level *lvl) {
                 }
 
                 if (! door_possible) {
-                    //TODO Checking whether the vertical/horizontal test is redundant
+                    //DEBUG Checking whether the vertical/horizontal test is redundant
                     logger("No door possible at (%d,%d)\n", x, y);
                     //TODO It is not redundant currently. It rejects T-junction wall squares.
                 }
 
-                //TODO door chance constant
                 //TODO XOR macro?
                 if (door_possible && (rand()%100 <= DOOR_PROBABILITY) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
                     logger("Placing door at (%d,%d)\n", x, y);
@@ -450,9 +439,6 @@ static void partition(level *lvl) {
                     //logger("Changing tile(%d,%d) from %c to %c\n", x, y, lvl->tiles[x][y], TILE_WALL);
                     lvl->tiles[x][y] = TILE_WALL;
                 }
-            } else {
-                //TODO Way too noisy to be useful
-                //logger("No potential door at (%d,%d)\n", x, y);
             }
         }
     }

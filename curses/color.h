@@ -1,5 +1,5 @@
 #ifndef COLOR_H
-#define COLOR
+#define COLOR_H
 
 #include <ncurses.h>
 

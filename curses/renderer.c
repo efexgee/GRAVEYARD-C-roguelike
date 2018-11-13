@@ -78,7 +78,7 @@ void draw_level(level *lvl) {
                 if (can_see(lvl, lvl->player, x, y)) {
                     if (lvl->chemistry[x][y]->elements[fire] > 0) {
                         icon = STATUS_BURNING;
-                        attron(COLOR_PAIR(RED));
+                        attron(COLOR_FIRE);
                     } else if (lvl->items[x][y] != NULL) {
                         icon = lvl->items[x][y]->item->display;
                     } else {
@@ -88,15 +88,15 @@ void draw_level(level *lvl) {
                 // Fog of war
                 if (icon == TILE_UNSEEN) {
                     icon = lvl->memory[x][y];
-                    attron(COLOR_PAIR(YELLOW));
+                    attron(COLOR_FOG_OF_WAR);
                 } else {
                     lvl->memory[x][y] = icon;
                 }
             }
             mvprintw(yy, xx, "%c", icon);
             //TODO this should be a general unsetter, not this
-            attroff(COLOR_PAIR(YELLOW));
-            attroff(COLOR_PAIR(RED));
+            attroff(COLOR_FOG_OF_WAR);
+            attroff(COLOR_FIRE);
         }
     }
 
