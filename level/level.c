@@ -402,7 +402,7 @@ static void partition(level *lvl) {
     // We are building a tree of connected rooms (via door placement)
     // starting at a "root" room. Potential doors only become doors if
     // they would connected an already-connected room to an unconnected
-    // room. 
+    // room.
     //TODO Any problem with skipping the border squares?
     for (int x = 1; x < lvl->width - 1; x++) {
         for (int y = 1; y < lvl->height - 1; y++) {
