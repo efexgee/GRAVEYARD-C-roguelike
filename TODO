@@ -1,5 +1,3 @@
-'assert' to check whether a mob is on an invalid square?
 "move" API
-reduce number of .h files?
 make functions static where appropriate
 sane directory structure

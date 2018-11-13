@@ -106,7 +106,7 @@ void player_move_fire(void *context, void* vmob) {
 
     if (x != mob->x || y != mob->y) {
         if (!(move_if_valid(mob->lvl, mob, x, y))) {
-            mob->emote = EMOTE_OUCH;
+            mob->emote = EMOTE_ANGRY;
         }
     }
 }
@@ -132,7 +132,7 @@ void random_walk_fire(void *context, void* vmob) {
 
     if (x != mob->x || y != mob->y) {
         if (!(move_if_valid(mob->lvl, mob, x, y))) {
-            mob->emote = EMOTE_OUCH;
+            mob->emote = EMOTE_ANGRY;
         }
     }
 }

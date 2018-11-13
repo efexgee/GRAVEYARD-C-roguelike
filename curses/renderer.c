@@ -29,6 +29,7 @@ void init_rendering_system(void) {
     int row,col;
     getmaxyx(stdscr,row,col);
     logger("Terminal size: %d %d\n", row, col);
+    //TODO Is this printing a 'c' at (0,0)?
     mvprintw(0,0, "c");
 
 }
@@ -44,14 +45,14 @@ void print_message(char *msg) {
 }
 
 static void draw_mobile(mobile *mob, int x_offset, int y_offset) {
-    char icon = ((item*)mob)->display;
+    int icon = ((item*)mob)->display;
 
     if (mob->emote) {
         icon = mob->emote;
         mob->emote = false;
     }
 
-    mvprintw(mob->y + y_offset, mob->x + x_offset, "%c", icon);
+    mvaddch(mob->y + y_offset, mob->x + x_offset, icon);
 }
 
 void draw_level(level *lvl) {
@@ -71,14 +72,13 @@ void draw_level(level *lvl) {
             int x = xx - x_offset;
             int y = yy - y_offset;
 
-            char icon = TILE_UNSEEN;
+            int icon = TILE_UNSEEN;
 
             if ((0 <= x && x < lvl->width) && (0 <= y && y < lvl->height)) {
                 //TODO wrapper function with clear name
                 if (can_see(lvl, lvl->player, x, y)) {
                     if (lvl->chemistry[x][y]->elements[fire] > 0) {
                         icon = STATUS_BURNING;
-                        attron(COLOR_FIRE);
                     } else if (lvl->items[x][y] != NULL) {
                         icon = lvl->items[x][y]->item->display;
                     } else {
@@ -93,10 +93,9 @@ void draw_level(level *lvl) {
                     lvl->memory[x][y] = icon;
                 }
             }
-            mvprintw(yy, xx, "%c", icon);
+            mvaddch(yy, xx, icon);
             //TODO this should be a general unsetter, not this
             attroff(COLOR_FOG_OF_WAR);
-            attroff(COLOR_FIRE);
         }
     }
 

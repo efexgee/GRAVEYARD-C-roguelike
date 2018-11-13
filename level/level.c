@@ -141,13 +141,13 @@ level* make_level(void) {
     lvl->mob_count = 1 + NUM_MONSTERS;
     lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile*)));
     for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob(lvl);
-    lvl->tiles = malloc(level_width * sizeof(unsigned char*));
-    lvl->tiles[0] = malloc(level_height * level_width * sizeof(unsigned char));
+    lvl->tiles = malloc(level_width * sizeof(int*));
+    lvl->tiles[0] = malloc(level_height * level_width * sizeof(int));
     for (int i = 1; i < level_width; i++)
         lvl->tiles[i] = lvl->tiles[0] + i * level_height;
 
-    lvl->memory = malloc(level_width * sizeof(unsigned char*));
-    lvl->memory[0] = malloc(level_height * level_width * sizeof(unsigned char));
+    lvl->memory = malloc(level_width * sizeof(int*));
+    lvl->memory[0] = malloc(level_height * level_width * sizeof(int));
     for (int i = 1; i < level_width; i++)
         lvl->memory[i] = lvl->memory[0] + i * level_height;
 
