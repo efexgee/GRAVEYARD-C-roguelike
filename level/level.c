@@ -356,9 +356,6 @@ static void partition(level *lvl) {
         }
     }
 
-    //TODO Any problem with skipping the border squares?
-
-    //TODO 'potential_doors' was getting border squares. how?
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             // for all nine squares around the tile
