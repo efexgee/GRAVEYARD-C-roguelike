@@ -1,24 +1,25 @@
+#include "../curses/color.h"
+
 // Tiles
 #define TILE_WALL '#'
 #define TILE_FLOOR '.'
 #define TILE_UNSEEN ' '
 
 // Scenery
-#define DOOR_OPEN '-'
+#define DOOR_OPEN '-' | BROWN
 #define DOOR_CLOSED '+'
 #define DOOR_LOCKED DOOR_CLOSED
 
 // Effects
-//TODO How do we get color in here?
-#define STATUS_BURNING '*'
+#define STATUS_BURNING '*' | RED
 
 // Mobs
-#define ICON_HUMAN '@'
-#define ICON_GOBLIN 'o'
+#define ICON_HUMAN '@' | YELLOW
+#define ICON_GOBLIN 'o' | GREEN
 #define ICON_ORC 'O'
 #define ICON_UMBER_HULK_AWAKE 'U'
 #define ICON_UMBER_HULK_ASLEEP 'z'
-#define ICON_MINOTAUR 'M'
+#define ICON_MINOTAUR 'M' | RED
 
 #define ICON_CHARGING '>'
 
@@ -28,8 +29,7 @@
 #define ICON_STICK '_'
 
 // Emotes
-#define EMOTE_OUCH '!'
-#define EMOTE_ANGRY '%'
+#define EMOTE_ANGRY '!' | RED
 
 // Other
 

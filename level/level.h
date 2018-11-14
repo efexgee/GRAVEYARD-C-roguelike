@@ -10,8 +10,8 @@
 #include "../simulation/simulation.h"
 
 typedef struct Level {
-    unsigned char **tiles;
-    unsigned char **memory;
+    int **tiles; // int to accomodate ncurses attributes
+    int **memory;
     inventory_item ***items;
     constituents ***chemistry;
     chemical_system *chem_sys;

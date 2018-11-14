@@ -141,13 +141,13 @@ level* make_level(void) {
     lvl->mob_count = 1 + NUM_MONSTERS;
     lvl->mobs = malloc(lvl->mob_count * (sizeof(mobile*)));
     for (int i=0; i < lvl->mob_count; i++) lvl->mobs[i] = make_mob(lvl);
-    lvl->tiles = malloc(level_width * sizeof(unsigned char*));
-    lvl->tiles[0] = malloc(level_height * level_width * sizeof(unsigned char));
+    lvl->tiles = malloc(level_width * sizeof(int*));
+    lvl->tiles[0] = malloc(level_height * level_width * sizeof(int));
     for (int i = 1; i < level_width; i++)
         lvl->tiles[i] = lvl->tiles[0] + i * level_height;
 
-    lvl->memory = malloc(level_width * sizeof(unsigned char*));
-    lvl->memory[0] = malloc(level_height * level_width * sizeof(unsigned char));
+    lvl->memory = malloc(level_width * sizeof(int*));
+    lvl->memory[0] = malloc(level_height * level_width * sizeof(int));
     for (int i = 1; i < level_width; i++)
         lvl->memory[i] = lvl->memory[0] + i * level_height;
 
@@ -406,6 +406,7 @@ static void partition(level *lvl) {
                 // a "horizontal" door
                     rm_a = room_ids[x+1][y];
                     rm_b = room_ids[x-1][y];
+                    door_possible = true;
                 } else if (y+1 < lvl->height && y-1 >= 0 && lvl->tiles[x][y+1] != TILE_WALL && lvl->tiles[x][y-1] != TILE_WALL) {
                 // a "vertical" door
                     rm_a = room_ids[x][y+1];
@@ -413,6 +414,7 @@ static void partition(level *lvl) {
                     door_possible = true;
                 }
 
+                //TODO XOR macro?
                 if (door_possible && (rand()%100 <= DOOR_PROBABILITY * 100) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
                     logger("Placing door at (%d,%d)\n", x, y);
                     lvl->tiles[x][y] = DOOR_OPEN;
