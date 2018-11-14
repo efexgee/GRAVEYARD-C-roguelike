@@ -80,7 +80,7 @@ void minotaur_fire(void *context, void* vmob) {
 
     if (can_see(lvl, mob, lvl->player->x, lvl->player->y)) {
         if (one_step(lvl, &mob->x, &mob->y, lvl->player->x, lvl->player->y)) {
-            ((item*) mob)->display = ICON_CHARGING;
+            ((item*) mob)->display = ICON_MINOTAUR_CHARGING;
         } else {
             ((item*) mob)->display = EMOTE_ANGRY;
         }
@@ -414,7 +414,6 @@ static void partition(level *lvl) {
                     door_possible = true;
                 }
 
-                //TODO XOR macro?
                 if (door_possible && (rand()%100 <= DOOR_PROBABILITY * 100) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
                     logger("Placing door at (%d,%d)\n", x, y);
                     lvl->tiles[x][y] = DOOR_OPEN;
