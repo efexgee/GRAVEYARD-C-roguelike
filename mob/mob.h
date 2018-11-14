@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "../game_cfg/game_cfg.h"
+#include "../config/game_cfg.h"
 #include "../simulation/simulation.h"
 #include "../simulation/vector.h"
 #include "../chemistry/chemistry.h"

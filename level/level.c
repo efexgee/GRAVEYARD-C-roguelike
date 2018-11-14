@@ -8,6 +8,8 @@
 #include "../mob/mob.h"
 #include "../los/los.h"
 
+//TODO Can we add a repeatable seed feature? I think trivial, right?
+
 static bool one_step(level *lvl, int *from_x, int *from_y, int to_x, int to_y) {
     int dx = to_x - *from_x;
     int dy = to_y - *from_y;
@@ -230,6 +232,7 @@ level* make_level(void) {
         lvl->mobs[i]->y = rand()%(level_height-2) + 1;
         lvl->mobs[i]->active = true;
 
+        //TODO magic number
         switch (rand()%4) {
             case 0:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
@@ -303,8 +306,9 @@ void destroy_level(level *lvl) {
     free((void *)lvl);
 }
 
+//TODO clearer function name?
 int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
-    if (w*h > 10*10 && rand()%100 < PARTITIONING_PERCENTAGE) {
+    if (w*h > 10*10 && rand()%100 < PARTITIONING_PROBABILITY * 100) {
         int hw = w/2;
         int hh = h/2;
         int max_rm, new_rm;
@@ -329,13 +333,23 @@ int rec_partition(int **room_map, int x, int y, int w, int h, int rm) {
 }
 
 static void partition(level *lvl) {
-    int **partitioning = malloc(lvl->width * sizeof(int*));
-    for (int i = 0; i != lvl->width; i++) partitioning[i] = malloc(lvl->height*sizeof(int));
+    // tile-to-room ID mapping
+    //TODO even clearer var name to remove this comment?
+    int **room_ids = malloc(lvl->width * sizeof(int*));
+    for (int i = 0; i != lvl->width; i++) {
+        room_ids[i] = malloc(lvl->height*sizeof(int));
+    }
+
     int **potential_doors= malloc(lvl->width * sizeof(int*));
-    for (int i = 0; i != lvl->width; i++) potential_doors[i] = malloc(lvl->height*sizeof(int));
+    for (int i = 0; i != lvl->width; i++) {
+        potential_doors[i] = malloc(lvl->height*sizeof(int));
+    }
 
-    int rooms = rec_partition(partitioning, 0, 0, lvl->width, lvl->height, 0);
+    // perform partitioning and get highest room ID
+    //TODO clearer function name to remove this comment
+    int max_room_id = rec_partition(room_ids, 0, 0, lvl->width, lvl->height, 0);
 
+    // initialize all tiles to bare floor
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             lvl->tiles[x][y] = TILE_FLOOR;
@@ -344,58 +358,73 @@ static void partition(level *lvl) {
 
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
-            for (int dx = -1; dx < 1; ++dx) for (int dy = -1; dy < 1; ++dy) {
-                int xx = x+dx;
-                int yy = y+dy;
-                if (xx < 0 || yy < 0 || xx >= lvl->width -1 || yy >= lvl->height -1) {
-                    lvl->tiles[x][y] = TILE_WALL;
-                } else if (partitioning[xx][yy] != partitioning[x][y]) {
-                    lvl->tiles[x][y] = TILE_WALL;
-                    if (abs(dx+dy) == 1) {
-                        potential_doors[x][y] = true;
+            // for all nine squares around the tile
+            for (int dx = -1; dx < 1; dx++) {
+                for (int dy = -1; dy < 1; dy++) {
+                    int xx = x+dx;
+                    int yy = y+dy;
+                    // if it's the level border, it's a wall
+                    if (xx < 0 || yy < 0 || xx >= lvl->width -1 || yy >= lvl->height -1) {
+                        lvl->tiles[x][y] = TILE_WALL;
+                    // if it's a room boundary (i.e. room ID changes), it's a wall
+                    } else if (room_ids[xx][yy] != room_ids[x][y]) {
+                        lvl->tiles[x][y] = TILE_WALL;
+                        // doors can only be N, E, S, or W of us
+                        if (abs(dx+dy) == 1) {
+                            potential_doors[x][y] = true;
+                        }
                     }
                 }
             }
         }
     }
 
-    bool room_accessible[rooms];
-    for (int i = 0; i < rooms; i++) room_accessible[i] = false;
-    room_accessible[partitioning[0][0]] = true;
-    for (int x = 0; x < lvl->width; x++) {
-        for (int y = 0; y < lvl->height; y++) {
+    // whether each room is accessible from the "root" room
+    bool room_connected[max_room_id];
+
+    for (int i = 0; i < max_room_id; i++) {
+        room_connected[i] = false;
+    }
+
+    // the "root" room
+    int rand_x = (rand() % (lvl->width - 1)) + 1;
+    int rand_y = (rand() % (lvl->height - 1)) + 1;
+
+    room_connected[room_ids[rand_x][rand_y]] = true;
+
+    // We are building a tree of connected rooms (via door placement)
+    // starting at a "root" room. Potential doors only become doors if
+    // they would connected an already-connected room to an unconnected
+    // room.
+    for (int x = 1; x < lvl->width - 1; x++) {
+        for (int y = 1; y < lvl->height - 1; y++) {
             if (potential_doors[x][y]) {
-                bool door_needed = false;
                 bool door_possible = false;
                 int rm_a, rm_b;
+
                 if (x+1 < lvl->width && x-1 >= 0 && lvl->tiles[x+1][y] != TILE_WALL && lvl->tiles[x-1][y] != TILE_WALL) {
-                    rm_a = partitioning[x+1][y];
-                    rm_b = partitioning[x-1][y];
+                // a "horizontal" door
+                    rm_a = room_ids[x+1][y];
+                    rm_b = room_ids[x-1][y];
+                } else if (y+1 < lvl->height && y-1 >= 0 && lvl->tiles[x][y+1] != TILE_WALL && lvl->tiles[x][y-1] != TILE_WALL) {
+                // a "vertical" door
+                    rm_a = room_ids[x][y+1];
+                    rm_b = room_ids[x][y-1];
                     door_possible = true;
                 }
-                if (y+1 < lvl->height && y-1 >= 0 && lvl->tiles[x][y+1] != TILE_WALL && lvl->tiles[x][y-1] != TILE_WALL) {
-                    rm_a = partitioning[x][y+1];
-                    rm_b = partitioning[x][y-1];
-                    door_possible = true;
-                }
-                if (door_possible && rand()%100 > 0) {
-                    if (room_accessible[rm_a] + !room_accessible[rm_b] != 1) {
-                        door_needed = true;
-                        room_accessible[rm_b]=true;
-                        room_accessible[rm_a]=true;
-                    }
-                }
-                if (door_needed) {
+
+                if (door_possible && (rand()%100 <= DOOR_PROBABILITY * 100) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
+                    logger("Placing door at (%d,%d)\n", x, y);
                     lvl->tiles[x][y] = DOOR_OPEN;
-                } else {
-                    lvl->tiles[x][y] = TILE_WALL;
+                    room_connected[rm_b]=true;
+                    room_connected[rm_a]=true;
                 }
             }
         }
     }
 
-    free((void *)partitioning[0]);
-    free((void *)partitioning);
+    free((void *)room_ids[0]);
+    free((void *)room_ids);
     free((void *)potential_doors[0]);
     free((void *)potential_doors);
 }

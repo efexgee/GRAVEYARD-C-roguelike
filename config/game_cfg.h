@@ -4,5 +4,6 @@
 #include "game_internals.h"
 #include "setup.h"
 #include "symbols.h"
+#include "colors.h"
 
 #endif
