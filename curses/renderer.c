@@ -83,7 +83,6 @@ void draw_level(level *lvl) {
                     }
                 }
                 // Fog of war
-                //TODO are we using TILE_UNSEEN to test whether something is visible?
                 if (icon == TILE_UNSEEN) {
                     icon = lvl->memory[x][y] | COLOR_FOG_OF_WAR;
                 } else {
