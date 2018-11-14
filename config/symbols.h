@@ -6,20 +6,20 @@
 #define TILE_UNSEEN ' '
 
 // Scenery
-#define DOOR_OPEN '-'
+#define DOOR_OPEN '-' | BROWN
 #define DOOR_CLOSED '+'
 #define DOOR_LOCKED DOOR_CLOSED
 
 // Effects
-#define STATUS_BURNING '*' | TEXT_RED
+#define STATUS_BURNING '*' | RED
 
 // Mobs
-#define ICON_HUMAN '@' | TEXT_YELLOW
-#define ICON_GOBLIN 'o' | TEXT_GREEN
+#define ICON_HUMAN '@' | YELLOW
+#define ICON_GOBLIN 'o' | GREEN
 #define ICON_ORC 'O'
 #define ICON_UMBER_HULK_AWAKE 'U'
 #define ICON_UMBER_HULK_ASLEEP 'z'
-#define ICON_MINOTAUR 'M' | TEXT_RED
+#define ICON_MINOTAUR 'M' | RED
 
 #define ICON_CHARGING '>'
 
@@ -29,7 +29,7 @@
 #define ICON_STICK '_'
 
 // Emotes
-#define EMOTE_ANGRY '!' | TEXT_RED
+#define EMOTE_ANGRY '!' | RED
 
 // Other
 

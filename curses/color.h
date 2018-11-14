@@ -3,27 +3,36 @@
 
 #include <ncurses.h>
 
-// Colors
+// Custom colors
+//TODO should I not use the COLOR_ prefix to make it clear
+//TODO that this is not a built-in color?
+#define COLOR_BROWN 17
+//TODO this 17 and the one below are different... is this dumb?
+
+// Color pair IDs
 #define ORIG_COLORS -1
-#define BLACK 0
-#define RED 1
-#define GREEN 2
-#define YELLOW 3
-#define BLUE 4
-#define MAGENTA 5
-#define CYAN 6
-#define WHITE 7
+#define PAIR_BLACK 0
+#define PAIR_RED 1
+#define PAIR_GREEN 2
+#define PAIR_YELLOW 3
+#define PAIR_BLUE 4
+#define PAIR_MAGENTA 5
+#define PAIR_CYAN 6
+#define PAIR_WHITE 7
+#define PAIR_BROWN 17
 
-// Text color pairs
-#define TEXT_BLACK COLOR_PAIR(BLACK)
-#define TEXT_RED COLOR_PAIR(RED)
-#define TEXT_GREEN COLOR_PAIR(GREEN)
-#define TEXT_YELLOW COLOR_PAIR(YELLOW)
-#define TEXT_BLUE COLOR_PAIR(BLUE)
-#define TEXT_MAGENTA COLOR_PAIR(MAGENTA)
-#define TEXT_CYAN COLOR_PAIR(CYAN)
-#define TEXT_WHITE COLOR_PAIR(WHITE)
+// Color pairs (foreground and background)
+#define BLACK COLOR_PAIR(PAIR_BLACK)
+#define RED COLOR_PAIR(PAIR_RED)
+#define GREEN COLOR_PAIR(PAIR_GREEN)
+#define YELLOW COLOR_PAIR(PAIR_YELLOW)
+#define BLUE COLOR_PAIR(PAIR_BLUE)
+#define MAGENTA COLOR_PAIR(PAIR_MAGENTA)
+#define CYAN COLOR_PAIR(PAIR_CYAN)
+#define WHITE COLOR_PAIR(PAIR_WHITE)
+#define BROWN COLOR_PAIR(PAIR_BROWN)
 
+// Functions
 bool init_colors();
 
 #endif

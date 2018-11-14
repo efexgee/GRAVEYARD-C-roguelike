@@ -150,6 +150,8 @@ int main() {
 
         if (do_log != NULL) logging_active = true;
 
+        logger("### Starting new game ###\n");
+
         srand(time(NULL));
 
         init_rendering_system();
