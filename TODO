@@ -1,3 +1,4 @@
 "move" API
 make functions static where appropriate
 sane directory structure
+implement dice rolling function

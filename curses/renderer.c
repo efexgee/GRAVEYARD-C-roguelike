@@ -29,9 +29,6 @@ void init_rendering_system(void) {
     int row,col;
     getmaxyx(stdscr,row,col);
     logger("Terminal size: %d %d\n", row, col);
-    //TODO Is this printing a 'c' at (0,0)?
-    mvprintw(0,0, "c");
-
 }
 
 void cleanup_rendering_system(void) {
