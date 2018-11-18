@@ -15,7 +15,7 @@
 
 // Mobs
 #define ICON_HUMAN '@'
-#define ICON_PLAYER ICON_HUMAN | YELLOW)
+#define ICON_PLAYER (ICON_HUMAN | YELLOW)
 #define ICON_GOBLIN ('o' | GREEN)
 #define ICON_ORC 'O'
 #define ICON_UMBER_HULK_AWAKE 'U'
