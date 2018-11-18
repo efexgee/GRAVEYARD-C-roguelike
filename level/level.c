@@ -89,7 +89,8 @@ static void minotaur_fire(void *context, void* vmob) {
 
 static void umber_hulk_fire(void *context, void* vmob) {
     mobile *mob = (mobile*)vmob;
-    if (rand()/(float)RAND_MAX > 0.8) {
+    //TODO wait... now we're doing rands like this?!
+    if (rand()/(float)RAND_MAX > 0.8) { //TODO magic number
         if (*(bool*)mob->state) {
             *(bool*)mob->state = false;
             mob->base.display = ICON_UMBER_HULK_ASLEEP;
@@ -114,7 +115,7 @@ static bool umber_hulk_invalidation(void *vmob) {
 static int umber_hulk_next_firing(void *context, void* vmob, struct event_listener *listeners) {
     mobile *mob = (mobile*)vmob;
     if (*(bool*)mob->state) {
-        float rate = 0.5;
+        float rate = 0.5; //TODO magic number
         float r = ((float)rand()) / RAND_MAX;
         int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
         if (next_fire < TICKS_PER_TURN) return TICKS_PER_TURN;
@@ -170,7 +171,7 @@ level* make_level(long int map_seed) {
     for (int x = 0; x < lvl->width; x++) {
         for (int y = 0; y < lvl->height; y++) {
             lvl->tiles[x][y] = TILE_FLOOR;
-            lvl->memory[x][y] = TILE_UNSEEN;
+            lvl->memory[x][y] = TILE_NOT_VISIBLE;
             lvl->items[x][y] = NULL;
 
             lvl->chemistry[x][y] = make_constituents();
@@ -182,6 +183,7 @@ level* make_level(long int map_seed) {
 
     lvl->sim = make_simulation((void*)lvl);
 
+    //TODO have make_map() return the starting coords for the player based on root room
     make_map(lvl);
 
     lvl->player = lvl->mobs[lvl->mob_count-1];
@@ -195,12 +197,12 @@ level* make_level(long int map_seed) {
     simulation_push_agent(lvl->sim, &a);
 
     ((item*)lvl->player)->health = 10;
-    ((item*)lvl->player)->display = ICON_HUMAN;
-    ((item*)lvl->player)->name = malloc(sizeof(char)*9);
-    strcpy(((item*)lvl->player)->name, "yourself");
+    ((item*)lvl->player)->display = ICON_PLAYER;
+    ((item*)lvl->player)->name = malloc(sizeof(char) * PLAYER_NAME_LENGTH);
+    strncpy(((item*)lvl->player)->name, getenv("USER"), PLAYER_NAME_LENGTH);
     lvl->player->active = true;
 
-    item* potion = malloc(sizeof(item)); // FIXME leaks
+    item* potion = malloc(sizeof(item)); // FIXME leaks //TODO Ok, how?
     potion->display = ICON_POTION;
     potion->health = 1;
     potion->chemistry = make_constituents();
@@ -275,7 +277,7 @@ level* make_level(long int map_seed) {
                 a.state = (void*)lvl->mobs[i];
                 a.listeners = ((item*)lvl->mobs[i])->listeners;
                 simulation_push_agent(lvl->sim, &a);
-                strcpy(((item*)lvl->mobs[i])->name, "umber hulk");
+                strcpy(((item*)lvl->mobs[i])->name, "umberhulk");
                 break;
             default:
                 ((item*)lvl->mobs[i])->display = ICON_MINOTAUR;

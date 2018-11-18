@@ -136,11 +136,12 @@ void level_step_chemistry(level* lvl) {
     }
 }
 
-bool set_options(long int *map_seed, long int *events_seed) {
+bool set_options(long int *map_seed, long int *events_seed, bool *reveal_map) {
         //TODO still need to look up 'const'
         const char* env_enable_log = getenv("ENABLE_LOG");
         const char* env_map_seed = getenv("MAP_SEED");
         const char* env_events_seed = getenv("EVENTS_SEED");
+        const char* env_reveal_map = getenv("REVEAL_MAP");
 
         if (env_enable_log != NULL) {
             // 'logging_active' is a global
@@ -163,6 +164,11 @@ bool set_options(long int *map_seed, long int *events_seed) {
             *events_seed = atoi(env_events_seed);
             logger("Getting mob seed from environment variable: %s\n", env_events_seed);
         }
+
+        if (env_reveal_map != NULL) {
+            *reveal_map = true;
+            logger("Running with map revealed: %s\n", env_reveal_map);
+        }
 }
 
 int main() {
@@ -172,8 +178,9 @@ int main() {
 
         long int map_seed;
         long int events_seed;
+        bool reveal_map;
 
-        set_options(&map_seed, &events_seed);
+        set_options(&map_seed, &events_seed, &reveal_map);
 
         logger("### Starting new game (MAP_SEED=%d EVENTS_SEED=%d) ###\n", map_seed, events_seed);
 
@@ -181,7 +188,7 @@ int main() {
 
         lvl = make_level(map_seed);
 
-        draw_level(lvl);
+        draw_level(lvl, reveal_map);
 
         srand(events_seed);
 
@@ -206,7 +213,7 @@ int main() {
             }
 
             // Update the screen
-            draw_level(lvl);
+            draw_level(lvl, reveal_map);
 
             // If the player is dead, wait for input
             if (!lvl->player->active) {

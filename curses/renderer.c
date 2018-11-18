@@ -51,7 +51,7 @@ static void draw_mobile(mobile *mob, int x_offset, int y_offset) {
     mvaddch(mob->y + y_offset, mob->x + x_offset, icon);
 }
 
-void draw_level(level *lvl) {
+void draw_level(level *lvl, bool reveal_map) {
     int row,col;
     getmaxyx(stdscr,row,col);
     row -= 1;
@@ -68,11 +68,11 @@ void draw_level(level *lvl) {
             int x = xx - x_offset;
             int y = yy - y_offset;
 
-            int icon = TILE_UNSEEN;
+            int icon = TILE_NOT_VISIBLE;
 
             if ((0 <= x && x < lvl->width) && (0 <= y && y < lvl->height)) {
                 //TODO wrapper function with clear name
-                if (can_see(lvl, lvl->player, x, y)) {
+                if (reveal_map || (can_see(lvl, lvl->player, x, y))) {
                     if (lvl->chemistry[x][y]->elements[fire] > 0) {
                         icon = STATUS_BURNING;
                     } else if (lvl->items[x][y] != NULL) {
@@ -82,7 +82,7 @@ void draw_level(level *lvl) {
                     }
                 }
                 // Fog of war
-                if (icon == TILE_UNSEEN) {
+                if (icon == TILE_NOT_VISIBLE) {
                     icon = lvl->memory[x][y] | COLOR_FOG_OF_WAR;
                 } else {
                     lvl->memory[x][y] = icon;
@@ -95,7 +95,7 @@ void draw_level(level *lvl) {
     // Draw mobs
     for (int i=0; i < lvl->mob_count; i++) {
         mobile* mob = lvl->mobs[i];
-        if (mob->active && can_see(lvl, lvl->player, mob->x, mob->y)) {
+        if (reveal_map || (mob->active && can_see(lvl, lvl->player, mob->x, mob->y))) {
             if ((0 < mob->y + y_offset && mob->y + y_offset <= row) && (0 < mob->x + x_offset && mob->x + x_offset <= col)) {
                 draw_mobile(mob, x_offset, y_offset);
             }
