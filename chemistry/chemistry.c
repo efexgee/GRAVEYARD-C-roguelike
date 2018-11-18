@@ -75,9 +75,9 @@ void destroy_chemical_system(chemical_system* sys) {
 
 bool reaction_possible(reaction *re, constituents *input, constituents *ctx) {
     for (int i=0; i < ELEMENT_COUNT; i++) {
-        int avaliable = input->elements[i];
-        if (ctx != NULL) avaliable += ctx->elements[i];
-        if (re->input.elements[i] > avaliable) {
+        int available = input->elements[i];
+        if (ctx != NULL) available += ctx->elements[i];
+        if (re->input.elements[i] > available) {
             return false;
         }
     }

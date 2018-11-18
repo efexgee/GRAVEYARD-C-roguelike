@@ -41,7 +41,7 @@ void print_message(char *msg) {
 }
 
 static void draw_mobile(mobile *mob, int x_offset, int y_offset) {
-    int icon = ((item*)mob)->display;
+    chtype icon = ((item*)mob)->display;
 
     if (mob->emote) {
         icon = mob->emote;
@@ -68,7 +68,7 @@ void draw_level(level *lvl, bool reveal_map) {
             int x = xx - x_offset;
             int y = yy - y_offset;
 
-            int icon = TILE_NOT_VISIBLE;
+            chtype icon = TILE_NOT_VISIBLE;
 
             if ((0 <= x && x < lvl->width) && (0 <= y && y < lvl->height)) {
                 //TODO wrapper function with clear name

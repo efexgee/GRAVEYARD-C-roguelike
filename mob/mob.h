@@ -16,7 +16,7 @@ struct InventoryItem;
 struct Level;
 
 typedef struct {
-    int display; // int to accomodate ncurses attributes
+    chtype display; // ncurses type: char with attributes
     char *name;
     constituents *chemistry;
     struct InventoryItem *contents;
@@ -37,7 +37,7 @@ typedef struct Mobile {
     struct Level *lvl;
     bool active;
     bool stacks;
-    int emote;
+    chtype emote;
     void *state;
 } mobile;
 

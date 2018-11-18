@@ -2,26 +2,26 @@
 
 // Tiles
 #define TILE_WALL '#'
-#define TILE_FLOOR '.' | LIGHT_GRAY
+#define TILE_FLOOR ('.' | LIGHT_GRAY)
 #define TILE_NOT_VISIBLE ' '
 
 // Scenery
-#define DOOR_OPEN '-' | BROWN
-#define DOOR_CLOSED '+'
+#define DOOR_OPEN ('-' | BROWN)
+#define DOOR_CLOSED ('+' | BROWN)
 #define DOOR_LOCKED DOOR_CLOSED
 
 // Effects
-#define STATUS_BURNING '*' | RED
+#define STATUS_BURNING ('*' | RED)
 
 // Mobs
 #define ICON_HUMAN '@'
-#define ICON_PLAYER ICON_HUMAN | YELLOW
-#define ICON_GOBLIN 'o' | GREEN
+#define ICON_PLAYER ICON_HUMAN | YELLOW)
+#define ICON_GOBLIN ('o' | GREEN)
 #define ICON_ORC 'O'
 #define ICON_UMBER_HULK_AWAKE 'U'
 #define ICON_UMBER_HULK_ASLEEP 'z'
 #define ICON_MINOTAUR 'M'
-#define ICON_MINOTAUR_CHARGING 'M' | RED
+#define ICON_MINOTAUR_CHARGING ('M' | RED)
 
 // Items
 #define ICON_ASH '~'
@@ -29,7 +29,7 @@
 #define ICON_STICK '_'
 
 // Emotes
-#define EMOTE_ANGRY '!' | RED
+#define EMOTE_ANGRY ('!' | RED)
 
 // Other
 

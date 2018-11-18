@@ -461,8 +461,11 @@ bool is_position_valid(level *lvl, int x, int y) {
     } else if (y >= lvl->height || y < 0) {
         logger("ERROR %s: %s: %d\n", "is_position_valid", "y is out of bounds", y);
         return false;
-    } else if (lvl->tiles[x][y] == TILE_WALL || lvl->tiles[x][y] == DOOR_CLOSED) {
-        // from a performance standpoint, this should be the first test
+    } else if (lvl->tiles[x][y] == TILE_WALL) {
+        logger("(%d,%d) is a wall\n", x, y);
+        return false;
+    } else if (lvl->tiles[x][y] == DOOR_CLOSED) {
+        logger("(%d,%d) is a closed door\n", x, y);
         return false;
     } else {
         for (int i=0; i < lvl->mob_count; i++) {
