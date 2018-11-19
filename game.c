@@ -137,7 +137,6 @@ void level_step_chemistry(level* lvl) {
 }
 
 bool set_options(long int *map_seed, long int *events_seed, bool *reveal_map) {
-        //TODO still need to look up 'const'
         const char* env_enable_log = getenv("ENABLE_LOG");
         const char* env_map_seed = getenv("MAP_SEED");
         const char* env_events_seed = getenv("EVENTS_SEED");
@@ -186,9 +185,9 @@ int main() {
 
         init_rendering_system();
 
-        lvl = make_level(map_seed);
+        lvl = make_level(map_seed, reveal_map);
 
-        draw_level(lvl, reveal_map);
+        draw_level(lvl);
 
         srand(events_seed);
 
@@ -213,7 +212,7 @@ int main() {
             }
 
             // Update the screen
-            draw_level(lvl, reveal_map);
+            draw_level(lvl);
 
             // If the player is dead, wait for input
             if (!lvl->player->active) {

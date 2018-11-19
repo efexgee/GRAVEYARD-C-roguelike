@@ -25,7 +25,7 @@ typedef struct Level {
     bool active;
 } level;
 
-level* make_level(long int map_seed);
+level* make_level(long int map_seed, bool reveal_map);
 void destroy_level(level *lvl);
 
 void level_push_item(level *lvl, item *itm, int x, int y);
