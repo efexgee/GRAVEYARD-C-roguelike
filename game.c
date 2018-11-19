@@ -193,7 +193,7 @@ int main() {
 
         // Main Loop
         while (lvl->active) {
-            logger("=== Turn %3d ===\n", turn++);
+            logger("=== Turn %4d ===\n", turn++);
             turn++;
             sync_simulation(lvl->sim, turn*TICKS_PER_TURN);
 

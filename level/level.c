@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 
+#include "../helpers.h"
 #include "level.h"
 #include "../log.h"
 #include "../mob/mob.h"
@@ -36,7 +37,7 @@ static bool one_step(level *lvl, int *from_x, int *from_y, int to_x, int to_y) {
     // if the direction is 45 degrees, pick at random
     if (dx == dy) {
         // faking (dx,dy) values to feed the selector below
-        if (rand() % 2 == 0) {
+        if (prob(0.5)) {
             dx = 1;
             dy = -1;
         } else {
@@ -89,8 +90,8 @@ static void minotaur_fire(void *context, void* vmob) {
 
 static void umber_hulk_fire(void *context, void* vmob) {
     mobile *mob = (mobile*)vmob;
-    //TODO wait... now we're doing rands like this?!
-    if (rand()/(float)RAND_MAX > 0.8) { //TODO magic number
+    //TODO did I keep the logic the same?
+    if (prob(0.8)) { //TODO magic number
         if (*(bool*)mob->state) {
             *(bool*)mob->state = false;
             mob->base.display = ICON_UMBER_HULK_ASLEEP;
@@ -116,7 +117,7 @@ static int umber_hulk_next_firing(void *context, void* vmob, struct event_listen
     mobile *mob = (mobile*)vmob;
     if (*(bool*)mob->state) {
         float rate = 0.5; //TODO magic number
-        float r = ((float)rand()) / RAND_MAX;
+        float r = frand();
         int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
         if (next_fire < TICKS_PER_TURN) return TICKS_PER_TURN;
         return next_fire;
@@ -248,13 +249,13 @@ level* make_level(long int map_seed, bool reveal_map) {
     push_inventory(lvl->player, stick);
 
     for (int i=0; i < lvl->mob_count-1; i++) {
-        lvl->mobs[i]->x = rand()%(level_width-2) + 1;
-        lvl->mobs[i]->y = rand()%(level_height-2) + 1;
+        lvl->mobs[i]->x = choose(level_width - 1);
+        lvl->mobs[i]->y = choose(level_height - 1);
         lvl->mobs[i]->active = true;
 
-        //TODO magic number
-        switch (rand()%4) {
-            case 0:
+        //TODO magic number (not really, but still not good)
+        switch (choose(4)) {
+            case 1:
                 ((item*)lvl->mobs[i])->display = ICON_GOBLIN;
                 lvl->mobs[i]->stacks = true;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*7);
@@ -265,7 +266,7 @@ level* make_level(long int map_seed, bool reveal_map) {
                 simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "goblin");
                 break;
-            case 1:
+            case 2:
                 ((item*)lvl->mobs[i])->display = ICON_ORC;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
                 a.next_firing = random_walk_next_firing;
@@ -275,7 +276,7 @@ level* make_level(long int map_seed, bool reveal_map) {
                 simulation_push_agent(lvl->sim, &a);
                 strcpy(((item*)lvl->mobs[i])->name, "orc");
                 break;
-            case 2:
+            case 3:
                 ((item*)lvl->mobs[i])->display = ICON_UMBER_HULK_AWAKE;
                 ((item*)lvl->mobs[i])->name = malloc(sizeof(char)*4);
                 ((item*)lvl->mobs[i])->health = 30;
@@ -327,7 +328,7 @@ void destroy_level(level *lvl) {
 }
 
 static int partition(int **room_map, int x, int y, int w, int h, int rm) {
-    if (w*h > 10*10 && rand()%100 < PARTITIONING_PROBABILITY * 100) {
+    if (w*h > 10*10 && prob(PARTITIONING_PROBABILITY)) { //TODO magic numbers
         int hw = w/2;
         int hh = h/2;
         int max_rm, new_rm;
@@ -341,7 +342,7 @@ static int partition(int **room_map, int x, int y, int w, int h, int rm) {
         if (new_rm > max_rm) max_rm = new_rm;
         return max_rm;
     } else {
-        rm += 1;
+        rm += 1; //TODO Why not rm++?
         for (int xx = x; xx < x+w; xx++) {
             for (int yy = y; yy < y+h; yy++) {
                 room_map[xx][yy] = rm;
@@ -394,9 +395,9 @@ static void make_map(level *lvl) {
         room_connected[i] = false;
     }
 
-    // the "root" room
-    int rand_x = (rand() % (lvl->width - 1)) + 1;
-    int rand_y = (rand() % (lvl->height - 1)) + 1;
+    // determine the "root" room
+    int rand_x = choose(lvl->width);
+    int rand_y = choose(lvl->height);
 
     room_connected[room_tiles[rand_x][rand_y]] = true;
 
@@ -422,9 +423,8 @@ static void make_map(level *lvl) {
                     door_possible = true;
                 }
 
-                if (door_possible && (rand()%100 <= DOOR_PROBABILITY * 100) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
-                    logger("Placing door at (%d,%d)\n", x, y);
-                    lvl->tiles[x][y] = DOOR_OPEN;
+                if (door_possible && prob(DOOR_PROBABILITY) && (room_connected[rm_a] + !room_connected[rm_b] != 1)) { // XOR
+                    lvl->tiles[x][y] = DOOR_CLOSED;
                     room_connected[rm_b]=true;
                     room_connected[rm_a]=true;
                 }
@@ -471,10 +471,8 @@ bool is_position_valid(level *lvl, int x, int y) {
         logger("ERROR %s: %s: %d\n", "is_position_valid", "y is out of bounds", y);
         return false;
     } else if (lvl->tiles[x][y] == TILE_WALL) {
-        logger("(%d,%d) is a wall\n", x, y);
         return false;
     } else if (lvl->tiles[x][y] == DOOR_CLOSED) {
-        logger("(%d,%d) is a closed door\n", x, y);
         return false;
     } else {
         for (int i=0; i < lvl->mob_count; i++) {

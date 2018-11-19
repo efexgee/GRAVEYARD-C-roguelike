@@ -6,5 +6,6 @@ make a point struct
 make a display struct
 implement hunting behavior (target last seen)
 implement dice rolling function
+keep mobs from spawning in walls
 
-change REVEAL_MAP to use lvl->memory to show FOW effects
+switch to using rand_r()

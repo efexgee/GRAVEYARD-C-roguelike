@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "../helpers.h"
 #include "../game.h"
 #include "mob.h"
 #include "../level/level.h"
@@ -113,7 +114,7 @@ void player_move_fire(void *context, void* vmob) {
 
 int random_walk_next_firing(void *context, void* vmob, struct event_listener *listeners) {
     float rate = 0.5;
-    float r = ((float)rand()) / RAND_MAX;
+    float r = frand();
     int next_fire = log(1-r)/(-rate) * TICKS_PER_TURN;
     if (next_fire < TICKS_PER_TURN) return TICKS_PER_TURN;
     return next_fire;
@@ -124,10 +125,10 @@ void random_walk_fire(void *context, void* vmob) {
     int x = mob->x;
     int y = mob->y;
 
-    if (rand()%2 == 0) {
-        x += rand()%3 - 1;
+    if (prob(0.5)) {
+        x += choose(3) - 2;
     } else {
-        y += rand()%3 - 1;
+        y += choose(3) - 2;
     }
 
     if (x != mob->x || y != mob->y) {
