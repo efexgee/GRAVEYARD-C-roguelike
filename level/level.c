@@ -342,7 +342,7 @@ static int partition(int **room_map, int x, int y, int w, int h, int rm) {
         if (new_rm > max_rm) max_rm = new_rm;
         return max_rm;
     } else {
-        rm += 1; //TODO Why not rm++?
+        rm += 1; // TODO Why not rm++?
         for (int xx = x; xx < x+w; xx++) {
             for (int yy = y; yy < y+h; yy++) {
                 room_map[xx][yy] = rm;
