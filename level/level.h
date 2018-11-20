@@ -33,5 +33,6 @@ item* level_pop_item(level *lvl, int x, int y);
 
 bool is_position_valid(level *lvl, int x, int y);
 bool move_if_valid(level *lvl, mobile *mob, int x, int y);
+void expose_map(level *lvl);
 
 #endif

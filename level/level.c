@@ -486,3 +486,11 @@ bool move_if_valid(level *lvl, mobile *mob, int x, int y) {
         return false;
     }
 }
+
+void expose_map(level *lvl) {
+    for (int x = 0; x < lvl->width; x++) {
+        for (int y = 0; y < lvl->height; y++) {
+                lvl->memory[x][y] = lvl->tiles[x][y];
+        }
+    }
+}
