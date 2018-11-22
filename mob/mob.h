@@ -11,6 +11,8 @@
 
 enum item_type {Weapon, Potion, Creature};
 
+#define UMBERHULK_SLEEP_PROBABILITY 0.2
+
 enum monster_type {
     Goblin,
     Orc,
