@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <check.h>
 
+#include "../../helpers.h"
 #include "../check_check.h"
 
 #include "../../simulation/simulation.h"
@@ -14,7 +15,7 @@ void simulation_teardown(void) {
 
 int mock_next_firing(void* st, enum sensory_events **ilist) {
     float rate = 1.0;
-    float r = ((float)rand()) / RAND_MAX;
+    float r = frand();
     return (1 - powf(M_E, -rate*r)) * 1000;
 }
 

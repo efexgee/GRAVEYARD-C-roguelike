@@ -11,6 +11,14 @@
 
 enum item_type {Weapon, Potion, Creature};
 
+enum monster_type {
+    Goblin,
+    Orc,
+    Umberhulk,
+    Minotaur,
+    NUM_MONSTER_TYPES
+};
+
 struct InventoryItem;
 
 struct Level;
